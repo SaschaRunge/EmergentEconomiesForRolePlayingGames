@@ -2,6 +2,7 @@ package economy
 
 import (
 	rpgMath "github.com/SaschaRunge/Go/EmergentEconomiesForRolePlayingGames/internal/math"
+	"math"
 )
 
 type ask struct {
@@ -26,13 +27,13 @@ func CreateBid(c Commodity, state CommodityState, limit int) bid {
 
 func DetermineSaleQuantity(state CommodityState) int {
 	favorability := favorability(state)
-	amountToSell := int(favorability * float64(state.excessInventory))
+	amountToSell := int(math.Round(favorability * float64(state.excessInventory)))
 	return amountToSell
 }
 
 func DeterminePurchaseQuantity(state CommodityState) int {
 	favorability := 1 - favorability(state)
-	amountToBuy := int(favorability * float64(state.availableInventory))
+	amountToBuy := int(math.Round(favorability * float64(state.availableInventory)))
 	return amountToBuy
 }
 
