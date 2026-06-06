@@ -16,5 +16,5 @@ func NewRNG(seed int64) *RNG {
 }
 
 func (r *RNG) NumberBetween(min, max float64) float64 {
-	return min + r.rng.Float64()*max
+	return min + r.rng.Float64()*(max-min)
 }
