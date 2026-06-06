@@ -1,4 +1,4 @@
-### Emergent Economies for Role Playing Games
+# Emergent Economies for Role Playing Games
 
 Go-Implementation of Emergent Economies for Role Playing Games:
 
