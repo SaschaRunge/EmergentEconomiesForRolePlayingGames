@@ -15,6 +15,10 @@ func Clamp(value, min, max float64) float64 {
 	return value
 }
 
+func almostEquals(value1, value2, epsilon float64) bool {
+	return math.Abs(value1-value2) < epsilon
+}
+
 func mean(values []float64) float64 {
 	mean := 0.
 
