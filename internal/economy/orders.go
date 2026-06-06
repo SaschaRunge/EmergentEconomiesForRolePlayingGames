@@ -33,7 +33,7 @@ func DetermineSaleQuantity(state CommodityState) int {
 
 func DeterminePurchaseQuantity(state CommodityState) int {
 	favorability := 1 - favorability(state)
-	amountToBuy := int(math.Round(favorability * float64(state.availableInventory)))
+	amountToBuy := int(math.Round(favorability * float64(state.inventorySpace)))
 	return amountToBuy
 }
 

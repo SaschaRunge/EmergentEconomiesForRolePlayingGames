@@ -16,8 +16,8 @@ type Agent struct {
 }
 
 type CommodityState struct {
-	availableInventory int
-	excessInventory    int
-	historicalMean     float64
-	priceBelief        rpgMath.PriceRange
+	inventorySpace  int
+	excessInventory int
+	historicalMean  float64
+	priceBelief     rpgMath.PriceRange
 }
