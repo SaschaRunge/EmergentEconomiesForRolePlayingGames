@@ -17,12 +17,26 @@ type bid struct {
 	quantity  int
 }
 
-func CreateAsk(c Commodity, state CommodityState, limit int) ask {
-	return ask{}
+func CreateAsk(c Commodity, state CommodityState, limit int, rng *rpgMath.RNG) ask {
+	askPrice := priceOf(state.priceBelief, rng)
+	ideal := DetermineSaleQuantity(state)
+	quantityToSell := int(math.Min(float64(ideal), float64(limit)))
+	return ask{
+		commodity: c,
+		price:     askPrice,
+		quantity:  quantityToSell,
+	}
 }
 
-func CreateBid(c Commodity, state CommodityState, limit int) bid {
-	return bid{}
+func CreateBid(c Commodity, state CommodityState, limit int, rng *rpgMath.RNG) bid {
+	bidPrice := priceOf(state.priceBelief, rng)
+	ideal := DeterminePurchaseQuantity(state)
+	quantityToBuy := int(math.Min(float64(ideal), float64(limit)))
+	return bid{
+		commodity: c,
+		price:     bidPrice,
+		quantity:  quantityToBuy,
+	}
 }
 
 func DetermineSaleQuantity(state CommodityState) int {
@@ -47,4 +61,8 @@ func favorability(state CommodityState) float64 {
 		favorability = 0.5
 	}
 	return favorability
+}
+
+func priceOf(priceBelief rpgMath.PriceRange, rng *rpgMath.RNG) float64 {
+	return rng.NumberBetween(priceBelief.Min, priceBelief.Max)
 }
