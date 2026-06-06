@@ -25,6 +25,18 @@ func CreateBid(c Commodity, state CommodityState, limit int) bid {
 }
 
 func DetermineSaleQuantity(state CommodityState) int {
+	favorability := favorability(state)
+	amountToSell := int(favorability * float64(state.excessInventory))
+	return amountToSell
+}
+
+func DeterminePurchaseQuantity(state CommodityState) int {
+	favorability := 1 - favorability(state)
+	amountToBuy := int(favorability * float64(state.availableInventory))
+	return amountToBuy
+}
+
+func favorability(state CommodityState) float64 {
 	var favorability float64
 	spread := state.priceBelief.Max - state.priceBelief.Min
 	if spread > 0 {
@@ -33,10 +45,5 @@ func DetermineSaleQuantity(state CommodityState) int {
 	} else {
 		favorability = 0.5
 	}
-	amountToSell := int(favorability * float64(state.excessInventory))
-	return amountToSell
-}
-
-func DeterminePurchaseQuantity(state CommodityState) int {
-	return 0
+	return favorability
 }
