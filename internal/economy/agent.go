@@ -12,7 +12,10 @@ type Agent struct {
 }
 
 func (a *Agent) CreateAsk(c Commodity, limit int) ask {
-	state := a.commodityState[c]
+	state, ok := a.commodityState[c]
+	if !ok {
+		panic("unhandled missing commodity when creating order")
+	}
 
 	askPrice := priceOf(state.priceBelief, a.rng)
 	ideal := a.DetermineSaleQuantity(c)
@@ -25,7 +28,10 @@ func (a *Agent) CreateAsk(c Commodity, limit int) ask {
 }
 
 func (a *Agent) CreateBid(c Commodity, limit int) bid {
-	state := a.commodityState[c]
+	state, ok := a.commodityState[c]
+	if !ok {
+		panic("unhandled missing commodity when creating order")
+	}
 
 	bidPrice := priceOf(state.priceBelief, a.rng)
 	ideal := a.DeterminePurchaseQuantity(c)
