@@ -1,10 +1,21 @@
 package agent
 
 import (
-	"github.com/SaschaRunge/Go/EmergentEconomiesForRolePlayingGames/internal/economy"
+	"github.com/SaschaRunge/Go/EmergentEconomiesForRolePlayingGames/internal/market"
 	rpgMath "github.com/SaschaRunge/Go/EmergentEconomiesForRolePlayingGames/internal/math"
 	"math"
 )
+
+type CommodityState struct {
+	inventorySpace  int
+	excessInventory int
+	historicalMean  float64
+	priceBelief     rpgMath.PriceRange
+}
+
+type ask = market.Ask
+type bid = market.Bid
+type commodity = market.Commodity
 
 type Agents struct {
 	Agents []*Agent
@@ -25,14 +36,14 @@ func NewAgents(rng *rpgMath.RNG) Agents {
 type Agent struct {
 	id             int
 	rng            *rpgMath.RNG
-	commodityState map[Commodity]CommodityState
+	commodityState map[commodity]CommodityState
 }
 
 func (a *Agents) New() *Agent {
 	agent := &Agent{
 		id:             a.nextID,
 		rng:            a.rng,
-		commodityState: map[Commodity]CommodityState{},
+		commodityState: map[commodity]CommodityState{},
 	}
 
 	a.nextID += 1
@@ -40,7 +51,7 @@ func (a *Agents) New() *Agent {
 	return agent
 }
 
-func (a *Agent) CreateAsk(c Commodity, limit int) ask {
+func (a *Agent) CreateAsk(c commodity, limit int) ask {
 	state, ok := a.commodityState[c]
 	if !ok {
 		panic("unhandled missing commodity when creating order")
@@ -50,13 +61,13 @@ func (a *Agent) CreateAsk(c Commodity, limit int) ask {
 	ideal := a.DetermineSaleQuantity(c)
 	quantityToSell := int(math.Min(float64(ideal), float64(limit)))
 	return ask{
-		commodity: c,
-		price:     askPrice,
-		quantity:  quantityToSell,
+		Commodity: c,
+		Price:     askPrice,
+		Quantity:  quantityToSell,
 	}
 }
 
-func (a *Agent) CreateBid(c Commodity, limit int) bid {
+func (a *Agent) CreateBid(c commodity, limit int) bid {
 	state, ok := a.commodityState[c]
 	if !ok {
 		panic("unhandled missing commodity when creating order")
@@ -66,13 +77,13 @@ func (a *Agent) CreateBid(c Commodity, limit int) bid {
 	ideal := a.DeterminePurchaseQuantity(c)
 	quantityToBuy := int(math.Min(float64(ideal), float64(limit)))
 	return bid{
-		commodity: c,
-		price:     bidPrice,
-		quantity:  quantityToBuy,
+		Commodity: c,
+		Price:     bidPrice,
+		Quantity:  quantityToBuy,
 	}
 }
 
-func (a *Agent) DetermineSaleQuantity(c Commodity) int {
+func (a *Agent) DetermineSaleQuantity(c commodity) int {
 	state := a.commodityState[c]
 
 	favorability := a.favorability(state.priceBelief, state.historicalMean)
@@ -80,7 +91,7 @@ func (a *Agent) DetermineSaleQuantity(c Commodity) int {
 	return amountToSell
 }
 
-func (a *Agent) DeterminePurchaseQuantity(c Commodity) int {
+func (a *Agent) DeterminePurchaseQuantity(c commodity) int {
 	state := a.commodityState[c]
 
 	favorability := 1 - a.favorability(state.priceBelief, state.historicalMean)

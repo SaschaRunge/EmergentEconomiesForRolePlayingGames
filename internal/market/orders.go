@@ -1,24 +1,13 @@
 package market
 
-type commodity interface {
+type Ask struct {
+	Commodity Commodity
+	Price     float64
+	Quantity  int
 }
 
-type ask struct {
-	commodity commodity
-	price     float64
-	quantity  int
-}
-
-type bid struct {
-	item     commodity
-	price    float64
-	quantity int
-}
-
-func CreateAsk(c commodity, limit int) ask {
-	return ask{}
-}
-
-func CreateBid(c commodity, limit int) bid {
-	return bid{}
+type Bid struct {
+	Commodity Commodity
+	Price     float64
+	Quantity  int
 }
