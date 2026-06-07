@@ -11,3 +11,6 @@ type Bid struct {
 	Price     float64
 	Quantity  int
 }
+
+type Receipt struct {
+}

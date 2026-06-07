@@ -18,7 +18,7 @@ type bid = market.Bid
 type commodity = market.Commodity
 
 type Registry struct {
-	agents []*Agent
+	agents map[int]*Agent
 	nextID int
 
 	rng *rpgMath.RNG
@@ -26,7 +26,7 @@ type Registry struct {
 
 func NewRegistry(rng *rpgMath.RNG) Registry {
 	return Registry{
-		agents: []*Agent{},
+		agents: map[int]*Agent{},
 		nextID: 0,
 
 		rng: rng,
@@ -46,8 +46,8 @@ func (r *Registry) New() *Agent {
 		commodityState: map[commodity]CommodityState{},
 	}
 
+	r.agents[r.nextID] = agent
 	r.nextID += 1
-	r.agents = append(r.agents, agent)
 	return agent
 }
 
@@ -82,6 +82,15 @@ func (a *Agent) CreateBid(c commodity, limit int) bid {
 		Quantity:  quantityToBuy,
 	}
 }
+
+/*
+func (a *Agent) PriceUpdateFromAsk(c commodity) {
+	weight :=
+}
+
+func (a *Agent) PriceUpdateFromBid(c commodity) {
+
+}*/
 
 func (a *Agent) determineSaleQuantity(c commodity) int {
 	state := a.commodityState[c]
