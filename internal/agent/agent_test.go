@@ -1,4 +1,4 @@
-package economy
+package agent
 
 import (
 	rpgMath "github.com/SaschaRunge/Go/EmergentEconomiesForRolePlayingGames/internal/math"

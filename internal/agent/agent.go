@@ -1,14 +1,43 @@
-package economy
+package agent
 
 import (
+	"github.com/SaschaRunge/Go/EmergentEconomiesForRolePlayingGames/internal/economy"
 	rpgMath "github.com/SaschaRunge/Go/EmergentEconomiesForRolePlayingGames/internal/math"
 	"math"
 )
 
+type Agents struct {
+	Agents []*Agent
+	nextID int
+
+	rng *rpgMath.RNG
+}
+
+func NewAgents(rng *rpgMath.RNG) Agents {
+	return Agents{
+		Agents: []*Agent{},
+		nextID: 0,
+
+		rng: rng,
+	}
+}
+
 type Agent struct {
 	id             int
-	commodityState map[Commodity]CommodityState
 	rng            *rpgMath.RNG
+	commodityState map[Commodity]CommodityState
+}
+
+func (a *Agents) New() *Agent {
+	agent := &Agent{
+		id:             a.nextID,
+		rng:            a.rng,
+		commodityState: map[Commodity]CommodityState{},
+	}
+
+	a.nextID += 1
+	a.Agents = append(a.Agents, agent)
+	return agent
 }
 
 func (a *Agent) CreateAsk(c Commodity, limit int) ask {
