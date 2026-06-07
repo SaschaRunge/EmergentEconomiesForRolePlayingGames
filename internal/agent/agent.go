@@ -7,6 +7,8 @@ import (
 )
 
 type CommodityState struct {
+	inventoryCapacity int
+
 	inventorySpace  int
 	excessInventory int
 	historicalMean  float64
@@ -83,45 +85,94 @@ func (a *Agent) CreateBid(c commodity, limit int) bid {
 	}
 }
 
-func (a *Agent) PriceUpdateFromAsk(c commodity, receipt market.Receipt, placement ask) {
-	if c != receipt.Commodity || c != placement.Commodity {
+// TODO: these need massive rework, the pseudocode is pretty flawed unfortunately
+func (a *Agent) PriceUpdateFromAsk(receipt market.Receipt, placement ask) {
+	if receipt.Commodity != placement.Commodity {
 		panic("unhandled: comparing non matching receipt/placement")
 	}
 
-	state, ok := a.commodityState[c]
+	state, ok := a.commodityState[placement.Commodity]
 	if !ok {
 		panic("unhandled missing commodity when creating order")
 	}
 
+	//TODO: paper has no solution for adjusting spread from ask
 	weight := 1. - float64(receipt.Quantity)/float64(placement.Quantity)
-	displacement := weight * state.historicalMean
+	displacement := weight * receipt.PriceMean
 
 	noUnitsSold := receipt.Quantity == 0
-	lessThanThreeQuarterSold := weight > 0.25
+	marketShare := 0.
+	if receipt.TotalUnitsSold > 0 {
+		marketShare = float64(receipt.Quantity) / float64(receipt.TotalUnitsSold)
+	}
 	earnedMoreThanExpected := placement.Price < receipt.Price
-	demandGreaterThanSupply := true
 
 	switch {
 	case noUnitsSold:
 		state.priceBelief.TranslateBy(-1. / 6 * displacement)
-	case lessThanThreeQuarterSold:
+	case marketShare < 0.75:
 		state.priceBelief.TranslateBy(-1. / 7 * displacement)
 	case earnedMoreThanExpected:
 		overbid := (receipt.Price - placement.Price)
+		// weight doesn't make much sense to use as it basically means
+		//"the more we sold to that good price, the less we should increase our price"
 		state.priceBelief.TranslateBy(1.2 * weight * overbid)
-	case demandGreaterThanSupply:
-		panic("not implemented")
+	case receipt.Demand > receipt.Supply:
+		state.priceBelief.TranslateBy(1. / 5 * state.historicalMean)
 	default:
-		state.priceBelief.TranslateBy(-1. / 7 * displacement) //
+		state.priceBelief.TranslateBy(-1. / 5 * state.historicalMean)
 	}
 
+	a.commodityState[placement.Commodity] = state
 }
 
-func (a *Agent) PriceUpdateFromBid(c commodity, receipt market.Receipt, placement bid) {
-	if c != receipt.Commodity || c != placement.Commodity {
+func (a *Agent) PriceUpdateFromBid(receipt market.Receipt, placement bid) {
+	if receipt.Commodity != placement.Commodity {
 		panic("unhandled: comparing non matching receipt/placement")
 	}
 
+	state, ok := a.commodityState[placement.Commodity]
+	if !ok {
+		panic("unhandled missing commodity when creating order")
+	}
+
+	orderAtLeastHalfFilled := float64(receipt.Quantity)/float64(placement.Quantity) >= 0.5
+	if orderAtLeastHalfFilled {
+		// contract by 20% rather than solely based on upper limit, contrary to paper
+		displacement := 0.1 * (state.priceBelief.Max - state.priceBelief.Min)
+		state.priceBelief.Min += displacement
+		state.priceBelief.Max -= displacement
+	} else {
+		displacement := 0.1 * state.priceBelief.Max
+		state.priceBelief.Max += displacement
+	}
+
+	marketShare := 0.
+	if receipt.TotalUnitsSold > 0 {
+		marketShare = float64(receipt.Quantity) / float64(receipt.TotalUnitsSold)
+	}
+	inventory := state.inventoryCapacity - state.inventorySpace
+	paidLessThanExpected := placement.Price > receipt.Price
+	offeredMoreThanHistoricalMean := placement.Price > state.historicalMean
+
+	switch {
+	case marketShare < 1 && float64(inventory) < 1./4*float64(state.inventoryCapacity):
+		//TODO: does not seem correct, would amount to very little price change when face with scarcity
+		displacement := math.Abs(placement.Price-receipt.PriceMean) / receipt.PriceMean
+		state.priceBelief.TranslateBy(displacement)
+	case paidLessThanExpected:
+		overbid := (placement.Price - receipt.Price)
+		state.priceBelief.TranslateBy(-1.1 * overbid)
+	case receipt.Supply > receipt.Demand && offeredMoreThanHistoricalMean:
+		overbid := (placement.Price - state.historicalMean)
+		state.priceBelief.TranslateBy(-1.1 * overbid)
+	case receipt.Demand > receipt.Supply:
+		state.priceBelief.TranslateBy(0.2 * state.historicalMean)
+	default:
+		state.priceBelief.TranslateBy(-0.2 * state.historicalMean)
+	}
+
+	a.commodityState[placement.Commodity] = state
 }
 
 func (a *Agent) determineSaleQuantity(c commodity) int {

@@ -16,4 +16,9 @@ type Receipt struct {
 	Commodity Commodity
 	Price     float64
 	Quantity  int
+
+	PriceMean      float64
+	Demand         int
+	Supply         int
+	TotalUnitsSold int
 }
