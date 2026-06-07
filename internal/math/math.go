@@ -9,6 +9,7 @@ type PriceRange struct {
 	Max float64
 }
 
+// WIP: currently stops at min/max = 0, might need to preserve spread
 func (p *PriceRange) TranslateBy(displacement float64) {
 	if displacement > 0 {
 		p.Min += displacement
