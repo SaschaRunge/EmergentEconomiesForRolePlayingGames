@@ -17,16 +17,16 @@ type ask = market.Ask
 type bid = market.Bid
 type commodity = market.Commodity
 
-type Agents struct {
-	Agents []*Agent
+type Registry struct {
+	agents []*Agent
 	nextID int
 
 	rng *rpgMath.RNG
 }
 
-func NewAgents(rng *rpgMath.RNG) Agents {
-	return Agents{
-		Agents: []*Agent{},
+func NewRegistry(rng *rpgMath.RNG) Registry {
+	return Registry{
+		agents: []*Agent{},
 		nextID: 0,
 
 		rng: rng,
@@ -39,15 +39,15 @@ type Agent struct {
 	commodityState map[commodity]CommodityState
 }
 
-func (a *Agents) New() *Agent {
+func (r *Registry) New() *Agent {
 	agent := &Agent{
-		id:             a.nextID,
-		rng:            a.rng,
+		id:             r.nextID,
+		rng:            r.rng,
 		commodityState: map[commodity]CommodityState{},
 	}
 
-	a.nextID += 1
-	a.Agents = append(a.Agents, agent)
+	r.nextID += 1
+	r.agents = append(r.agents, agent)
 	return agent
 }
 
