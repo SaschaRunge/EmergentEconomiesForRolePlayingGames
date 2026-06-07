@@ -119,3 +119,35 @@ func TestVariance(t *testing.T) {
 		}
 	}
 }
+
+func TestTranslateBy(t *testing.T) {
+	cases := []struct {
+		input        float64
+		initialRange PriceRange
+		expected     PriceRange
+	}{
+		{
+			input:        2.5,
+			initialRange: PriceRange{Min: 10, Max: 20},
+			expected:     PriceRange{Min: 12.5, Max: 22.5},
+		},
+		{
+			input:        -3.5,
+			initialRange: PriceRange{Min: 10, Max: 20},
+			expected:     PriceRange{Min: 6.5, Max: 16.5},
+		},
+		{
+			input:        -11,
+			initialRange: PriceRange{Min: 5, Max: 15},
+			expected:     PriceRange{Min: 0, Max: 4},
+		},
+	}
+
+	for _, c := range cases {
+		priceRange := c.initialRange
+		priceRange.TranslateBy(c.input)
+		if priceRange != c.expected {
+			t.Errorf("expected: (Min:%.1f|Max:%.1f), actual: (Min:%.1f|Max:%.1f)", c.expected.Min, c.expected.Max, priceRange.Min, priceRange.Max)
+		}
+	}
+}

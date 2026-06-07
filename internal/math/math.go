@@ -9,6 +9,17 @@ type PriceRange struct {
 	Max float64
 }
 
+func (p *PriceRange) TranslateBy(displacement float64) {
+	if displacement > 0 {
+		p.Min += displacement
+		p.Max += displacement
+	}
+	if displacement < 0 {
+		p.Min = math.Max(0, p.Min+displacement)
+		p.Max = math.Max(0, p.Max+displacement)
+	}
+}
+
 func Clamp(value, min, max float64) float64 {
 	value = math.Min(value, max)
 	value = math.Max(value, min)
