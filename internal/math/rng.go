@@ -18,3 +18,9 @@ func NewRNG(seed int64) *RNG {
 func (r *RNG) NumberBetween(min, max float64) float64 {
 	return min + r.rng.Float64()*(max-min)
 }
+
+func Shuffle[T any](r *RNG, orderBook []T) {
+	r.rng.Shuffle(len(orderBook), func(i, j int) {
+		orderBook[i], orderBook[j] = orderBook[j], orderBook[i]
+	})
+}
