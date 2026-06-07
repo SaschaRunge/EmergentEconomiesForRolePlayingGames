@@ -13,4 +13,7 @@ type Bid struct {
 }
 
 type Receipt struct {
+	Commodity Commodity
+	Price     float64
+	Quantity  int
 }

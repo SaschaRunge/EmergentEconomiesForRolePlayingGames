@@ -83,14 +83,46 @@ func (a *Agent) CreateBid(c commodity, limit int) bid {
 	}
 }
 
-/*
-func (a *Agent) PriceUpdateFromAsk(c commodity) {
-	weight :=
+func (a *Agent) PriceUpdateFromAsk(c commodity, receipt market.Receipt, placement ask) {
+	if c != receipt.Commodity || c != placement.Commodity {
+		panic("unhandled: comparing non matching receipt/placement")
+	}
+
+	state, ok := a.commodityState[c]
+	if !ok {
+		panic("unhandled missing commodity when creating order")
+	}
+
+	weight := 1. - float64(receipt.Quantity)/float64(placement.Quantity)
+	displacement := weight * state.historicalMean
+
+	noUnitsSold := receipt.Quantity == 0
+	lessThanThreeQuarterSold := weight > 0.25
+	earnedMoreThanExpected := placement.Price < receipt.Price
+	demandGreaterThanSupply := true
+
+	switch {
+	case noUnitsSold:
+		state.priceBelief.TranslateBy(-1. / 6 * displacement)
+	case lessThanThreeQuarterSold:
+		state.priceBelief.TranslateBy(-1. / 7 * displacement)
+	case earnedMoreThanExpected:
+		overbid := (receipt.Price - placement.Price)
+		state.priceBelief.TranslateBy(1.2 * weight * overbid)
+	case demandGreaterThanSupply:
+		panic("not implemented")
+	default:
+		state.priceBelief.TranslateBy(-1. / 7 * displacement) //
+	}
+
 }
 
-func (a *Agent) PriceUpdateFromBid(c commodity) {
+func (a *Agent) PriceUpdateFromBid(c commodity, receipt market.Receipt, placement bid) {
+	if c != receipt.Commodity || c != placement.Commodity {
+		panic("unhandled: comparing non matching receipt/placement")
+	}
 
-}*/
+}
 
 func (a *Agent) determineSaleQuantity(c commodity) int {
 	state := a.commodityState[c]
