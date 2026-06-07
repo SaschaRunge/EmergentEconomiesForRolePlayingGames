@@ -69,7 +69,7 @@ func TestDetermineSaleQuantity(t *testing.T) {
 			commodityState: map[commodity]CommodityState{market.Wood: c.input},
 		}
 
-		actual := agent.DetermineSaleQuantity(market.Wood)
+		actual := agent.determineSaleQuantity(market.Wood)
 		if actual != c.expected {
 			t.Errorf("case: %q, expected: %d, actual: %d", c.description, c.expected, actual)
 		}
@@ -139,7 +139,7 @@ func TestDeterminePurchaseQuantity(t *testing.T) {
 			commodityState: map[commodity]CommodityState{market.Wood: c.input},
 		}
 
-		actual := agent.DeterminePurchaseQuantity(market.Wood)
+		actual := agent.determinePurchaseQuantity(market.Wood)
 		if actual != c.expected {
 			t.Errorf("case: %q, expected: %d, actual: %d", c.description, c.expected, actual)
 		}

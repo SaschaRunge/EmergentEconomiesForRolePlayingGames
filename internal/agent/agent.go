@@ -58,7 +58,7 @@ func (a *Agent) CreateAsk(c commodity, limit int) ask {
 	}
 
 	askPrice := priceOf(state.priceBelief, a.rng)
-	ideal := a.DetermineSaleQuantity(c)
+	ideal := a.determineSaleQuantity(c)
 	quantityToSell := int(math.Min(float64(ideal), float64(limit)))
 	return ask{
 		Commodity: c,
@@ -74,7 +74,7 @@ func (a *Agent) CreateBid(c commodity, limit int) bid {
 	}
 
 	bidPrice := priceOf(state.priceBelief, a.rng)
-	ideal := a.DeterminePurchaseQuantity(c)
+	ideal := a.determinePurchaseQuantity(c)
 	quantityToBuy := int(math.Min(float64(ideal), float64(limit)))
 	return bid{
 		Commodity: c,
@@ -83,7 +83,7 @@ func (a *Agent) CreateBid(c commodity, limit int) bid {
 	}
 }
 
-func (a *Agent) DetermineSaleQuantity(c commodity) int {
+func (a *Agent) determineSaleQuantity(c commodity) int {
 	state := a.commodityState[c]
 
 	favorability := a.favorability(state.priceBelief, state.historicalMean)
@@ -91,7 +91,7 @@ func (a *Agent) DetermineSaleQuantity(c commodity) int {
 	return amountToSell
 }
 
-func (a *Agent) DeterminePurchaseQuantity(c commodity) int {
+func (a *Agent) determinePurchaseQuantity(c commodity) int {
 	state := a.commodityState[c]
 
 	favorability := 1 - a.favorability(state.priceBelief, state.historicalMean)
