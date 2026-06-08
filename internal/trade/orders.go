@@ -1,14 +1,8 @@
-package orders
-
-import (
-	"github.com/SaschaRunge/Go/EmergentEconomiesForRolePlayingGames/internal/ressources"
-)
-
-type commodity = ressources.Commodity
+package trade
 
 type Order struct {
 	AgentID   int
-	Commodity commodity
+	Commodity Commodity
 	Price     float64
 	Quantity  int
 }
@@ -30,7 +24,7 @@ type Receipt struct {
 	TotalUnitsSold int
 }
 
-func NewAsk(agentID int, commodity commodity, price float64, quantity int) Ask {
+func NewAsk(agentID int, commodity Commodity, price float64, quantity int) Ask {
 	return Ask{
 		Order{
 			AgentID:   agentID,
@@ -41,7 +35,7 @@ func NewAsk(agentID int, commodity commodity, price float64, quantity int) Ask {
 	}
 }
 
-func NewBid(agentID int, commodity commodity, price float64, quantity int) Bid {
+func NewBid(agentID int, commodity Commodity, price float64, quantity int) Bid {
 	return Bid{
 		Order{
 			AgentID:   agentID,

@@ -1,4 +1,4 @@
-package ressources
+package trade
 
 type Commodity int
 
