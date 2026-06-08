@@ -1,8 +1,8 @@
 package agent
 
 import (
-	"github.com/SaschaRunge/Go/EmergentEconomiesForRolePlayingGames/internal/market"
 	rpgMath "github.com/SaschaRunge/Go/EmergentEconomiesForRolePlayingGames/internal/math"
+	"github.com/SaschaRunge/Go/EmergentEconomiesForRolePlayingGames/internal/ressources"
 	"testing"
 )
 
@@ -66,10 +66,10 @@ func TestDetermineSaleQuantity(t *testing.T) {
 
 	for _, c := range cases {
 		agent := Agent{
-			commodityState: map[commodity]CommodityState{market.Wood: c.input},
+			commodityState: map[commodity]CommodityState{ressources.Wood: c.input},
 		}
 
-		actual := agent.determineSaleQuantity(market.Wood)
+		actual := agent.determineSaleQuantity(ressources.Wood)
 		if actual != c.expected {
 			t.Errorf("case: %q, expected: %d, actual: %d", c.description, c.expected, actual)
 		}
@@ -136,10 +136,10 @@ func TestDeterminePurchaseQuantity(t *testing.T) {
 
 	for _, c := range cases {
 		agent := Agent{
-			commodityState: map[commodity]CommodityState{market.Wood: c.input},
+			commodityState: map[commodity]CommodityState{ressources.Wood: c.input},
 		}
 
-		actual := agent.determinePurchaseQuantity(market.Wood)
+		actual := agent.determinePurchaseQuantity(ressources.Wood)
 		if actual != c.expected {
 			t.Errorf("case: %q, expected: %d, actual: %d", c.description, c.expected, actual)
 		}

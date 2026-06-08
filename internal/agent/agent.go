@@ -1,8 +1,9 @@
 package agent
 
 import (
-	"github.com/SaschaRunge/Go/EmergentEconomiesForRolePlayingGames/internal/market"
 	rpgMath "github.com/SaschaRunge/Go/EmergentEconomiesForRolePlayingGames/internal/math"
+	"github.com/SaschaRunge/Go/EmergentEconomiesForRolePlayingGames/internal/orders"
+	"github.com/SaschaRunge/Go/EmergentEconomiesForRolePlayingGames/internal/ressources"
 	"math"
 )
 
@@ -15,9 +16,9 @@ type CommodityState struct {
 	priceBelief     rpgMath.PriceRange
 }
 
-type ask = market.Ask
-type bid = market.Bid
-type commodity = market.Commodity
+type ask = orders.Ask
+type bid = orders.Bid
+type commodity = ressources.Commodity
 
 type Registry struct {
 	agents map[int]*Agent
@@ -62,11 +63,7 @@ func (a *Agent) CreateAsk(c commodity, limit int) ask {
 	askPrice := priceOf(state.priceBelief, a.rng)
 	ideal := a.determineSaleQuantity(c)
 	quantityToSell := int(math.Min(float64(ideal), float64(limit)))
-	return ask{
-		Commodity: c,
-		Price:     askPrice,
-		Quantity:  quantityToSell,
-	}
+	return orders.NewAsk(a.id, c, askPrice, quantityToSell)
 }
 
 func (a *Agent) CreateBid(c commodity, limit int) bid {
@@ -78,15 +75,11 @@ func (a *Agent) CreateBid(c commodity, limit int) bid {
 	bidPrice := priceOf(state.priceBelief, a.rng)
 	ideal := a.determinePurchaseQuantity(c)
 	quantityToBuy := int(math.Min(float64(ideal), float64(limit)))
-	return bid{
-		Commodity: c,
-		Price:     bidPrice,
-		Quantity:  quantityToBuy,
-	}
+	return orders.NewBid(a.id, c, bidPrice, quantityToBuy)
 }
 
 // TODO: these need massive rework, the pseudocode is pretty flawed unfortunately
-func (a *Agent) PriceUpdateFromAsk(receipt market.Receipt, placement ask) {
+func (a *Agent) PriceUpdateFromAsk(receipt orders.Receipt, placement ask) {
 	if receipt.Commodity != placement.Commodity {
 		panic("unhandled: comparing non matching receipt/placement")
 	}
@@ -126,7 +119,7 @@ func (a *Agent) PriceUpdateFromAsk(receipt market.Receipt, placement ask) {
 	a.commodityState[placement.Commodity] = state
 }
 
-func (a *Agent) PriceUpdateFromBid(receipt market.Receipt, placement bid) {
+func (a *Agent) PriceUpdateFromBid(receipt orders.Receipt, placement bid) {
 	if receipt.Commodity != placement.Commodity {
 		panic("unhandled: comparing non matching receipt/placement")
 	}
