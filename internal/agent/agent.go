@@ -1,9 +1,10 @@
 package agent
 
 import (
+	"math"
+
 	rpgMath "github.com/SaschaRunge/Go/EmergentEconomiesForRolePlayingGames/internal/math"
 	"github.com/SaschaRunge/Go/EmergentEconomiesForRolePlayingGames/internal/trade"
-	"math"
 )
 
 type CommodityState struct {
