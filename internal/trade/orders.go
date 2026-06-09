@@ -26,7 +26,7 @@ type Receipt struct {
 
 func NewAsk(agentID int, commodity Commodity, price float64, quantity int) Ask {
 	return Ask{
-		Order{
+		Order: Order{
 			AgentID:   agentID,
 			Commodity: commodity,
 			Price:     price,
@@ -37,7 +37,18 @@ func NewAsk(agentID int, commodity Commodity, price float64, quantity int) Ask {
 
 func NewBid(agentID int, commodity Commodity, price float64, quantity int) Bid {
 	return Bid{
-		Order{
+		Order: Order{
+			AgentID:   agentID,
+			Commodity: commodity,
+			Price:     price,
+			Quantity:  quantity,
+		},
+	}
+}
+
+func NewReceipt(agentID int, commodity Commodity, price float64, quantity int) Receipt {
+	return Receipt{
+		Order: Order{
 			AgentID:   agentID,
 			Commodity: commodity,
 			Price:     price,
