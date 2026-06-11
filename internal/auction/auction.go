@@ -35,6 +35,12 @@ type Statistics struct {
 	AverageClearingPrice float64
 }
 
+func New(rng *rpgMath.RNG) House {
+	return House{
+		rng: rng,
+	}
+}
+
 func (h *House) ResolveOffers(c commodity, asks []ask, bids []bid) Result {
 	receipts := make(map[int][]receipt)
 
