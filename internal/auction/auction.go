@@ -15,27 +15,42 @@ type receipt = trade.Receipt
 type commodity = trade.Commodity
 
 type House struct {
-	rng     *rpgMath.RNG
-	askBook []ask
-	bidBook []bid
+	rng *rpgMath.RNG
 
-	receipts map[int][]receipt
+	daysToArchive int
+	statistics    []Statistics
 }
 
-func (h *House) ResolveOffers(c commodity) {
-	rpgMath.Shuffle(h.rng, h.askBook)
-	rpgMath.Shuffle(h.rng, h.bidBook)
+type Result struct {
+	Asks     []ask
+	Bids     []bid
+	Receipts map[int][]receipt
+}
 
-	slices.SortStableFunc(h.askBook, func(a, b ask) int {
+type Statistics struct {
+	Commodity            commodity
+	Supply               int
+	Demand               int
+	UnitsSold            int
+	AverageClearingPrice float64
+}
+
+func (h *House) ResolveOffers(c commodity, asks []ask, bids []bid) Result {
+	receipts := make(map[int][]receipt)
+
+	rpgMath.Shuffle(h.rng, asks)
+	rpgMath.Shuffle(h.rng, bids)
+
+	slices.SortStableFunc(asks, func(a, b ask) int {
 		return cmp.Compare(a.Price, b.Price)
 	})
-	slices.SortStableFunc(h.bidBook, func(a, b bid) int {
+	slices.SortStableFunc(bids, func(a, b bid) int {
 		return cmp.Compare(b.Price, a.Price)
 	})
 
-	for len(h.askBook) > 0 && len(h.bidBook) > 0 {
-		buyer := &h.bidBook[0]
-		seller := &h.askBook[0]
+	for len(asks) > 0 && len(bids) > 0 {
+		buyer := &bids[0]
+		seller := &asks[0]
 
 		//might need revision, contrary to the paper this will cause cancelation of trades if there's no buyer willing to match a sellers price
 		if buyer.Price < seller.Price {
@@ -49,30 +64,21 @@ func (h *House) ResolveOffers(c commodity) {
 			buyer.Quantity -= quantityTraded
 			seller.Quantity -= quantityTraded
 
-			if _, exists := h.receipts[buyer.AgentID]; !exists {
-				h.receipts[buyer.AgentID] = []receipt{}
-			}
-			if _, exists := h.receipts[seller.AgentID]; !exists {
-				h.receipts[seller.AgentID] = []receipt{}
-			}
-
-			h.receipts[buyer.AgentID] = append(h.receipts[buyer.AgentID], trade.NewReceipt(buyer.AgentID, c, clearingPrice, quantityTraded))
-			h.receipts[seller.AgentID] = append(h.receipts[seller.AgentID], trade.NewReceipt(seller.AgentID, c, clearingPrice, quantityTraded))
+			receipts[buyer.AgentID] = append(receipts[buyer.AgentID], trade.NewReceipt(buyer.AgentID, c, clearingPrice, quantityTraded))
+			receipts[seller.AgentID] = append(receipts[seller.AgentID], trade.NewReceipt(seller.AgentID, c, clearingPrice, quantityTraded))
 		}
 
 		if buyer.Quantity == 0 {
-			h.bidBook = h.bidBook[1:]
+			bids = bids[1:]
 		}
 		if seller.Quantity == 0 {
-			h.askBook = h.askBook[1:]
+			asks = asks[1:]
 		}
 	}
-}
 
-func (h *House) PlaceAsk(a ask) {
-	h.askBook = append(h.askBook, a)
-}
-
-func (h *House) PlaceBid(b bid) {
-	h.bidBook = append(h.bidBook, b)
+	return Result{
+		Asks:     asks,
+		Bids:     bids,
+		Receipts: receipts,
+	}
 }
