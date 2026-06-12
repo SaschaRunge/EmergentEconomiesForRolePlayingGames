@@ -21,12 +21,6 @@ type House struct {
 	statistics    []Statistics
 }
 
-type Result struct {
-	Asks     []ask
-	Bids     []bid
-	Receipts map[int][]receipt
-}
-
 type Statistics struct {
 	Commodity            commodity
 	Supply               int
@@ -41,7 +35,7 @@ func New(rng *rpgMath.RNG) House {
 	}
 }
 
-func (h *House) ResolveOffers(c commodity, asks []ask, bids []bid) Result {
+func (h *House) ResolveOffers(c commodity, asks []ask, bids []bid) map[int][]receipt {
 	receipts := make(map[int][]receipt)
 
 	rpgMath.Shuffle(h.rng, asks)
@@ -82,9 +76,5 @@ func (h *House) ResolveOffers(c commodity, asks []ask, bids []bid) Result {
 		}
 	}
 
-	return Result{
-		Asks:     asks,
-		Bids:     bids,
-		Receipts: receipts,
-	}
+	return receipts
 }

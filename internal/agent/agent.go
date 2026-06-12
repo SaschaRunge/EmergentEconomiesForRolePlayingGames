@@ -21,7 +21,7 @@ type bid = trade.Bid
 type commodity = trade.Commodity
 
 type Registry struct {
-	agents map[int]*Agent
+	Agents map[int]*Agent
 	nextID int
 
 	rng *rpgMath.RNG
@@ -29,7 +29,7 @@ type Registry struct {
 
 func NewRegistry(rng *rpgMath.RNG) Registry {
 	return Registry{
-		agents: map[int]*Agent{},
+		Agents: map[int]*Agent{},
 		nextID: 0,
 
 		rng: rng,
@@ -49,7 +49,7 @@ func (r *Registry) New() *Agent {
 		commodityState: map[commodity]CommodityState{},
 	}
 
-	r.agents[r.nextID] = agent
+	r.Agents[r.nextID] = agent
 	r.nextID += 1
 	return agent
 }
