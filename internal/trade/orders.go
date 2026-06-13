@@ -17,11 +17,25 @@ type Bid struct {
 
 type Receipt struct {
 	Order
+}
 
-	PriceMean      float64
-	Demand         int
-	Supply         int
-	TotalUnitsSold int
+func (r *Receipt) Add(receipt Receipt) Receipt {
+	if r.AgentID != receipt.AgentID {
+		panic("receipt contains mismatching agents")
+	}
+
+	if r.Commodity != receipt.Commodity {
+		panic("receipt contains mismatching commodities")
+	}
+
+	return Receipt{
+		Order: Order{
+			AgentID:   r.AgentID,
+			Commodity: r.Commodity,
+			Price:     r.Price + receipt.Price,
+			Quantity:  r.Quantity + receipt.Quantity,
+		},
+	}
 }
 
 func NewAsk(agentID int, commodity Commodity, price float64, quantity int) Ask {
