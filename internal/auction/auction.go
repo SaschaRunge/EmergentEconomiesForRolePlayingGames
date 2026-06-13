@@ -39,6 +39,17 @@ func New(daysToArchive int, rng *rpgMath.RNG) *House {
 }
 
 func (h *House) ResolveOffers(c commodity, asks []ask, bids []bid) map[int][]receipt {
+	for _, a := range asks {
+		if a.Commodity != c {
+			panic("auction house: ask contained wrong commodity")
+		}
+	}
+	for _, b := range bids {
+		if b.Commodity != c {
+			panic("auction house: bid contained wrong commodity")
+		}
+	}
+
 	receiptsByAgentID := make(map[int][]receipt)
 
 	rpgMath.Shuffle(h.rng, asks)
