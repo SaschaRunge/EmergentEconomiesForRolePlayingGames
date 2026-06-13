@@ -82,3 +82,7 @@ func NewReceipt(agentID int, commodity Commodity, price float64, quantity int) R
 		},
 	}
 }
+
+func EmptyReceipt(agentID int, commodity Commodity) Receipt {
+	return NewReceipt(agentID, commodity, 0, 0)
+}
