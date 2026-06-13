@@ -17,6 +17,12 @@ type Bid struct {
 
 type Receipt struct {
 	Order
+
+	//TODO: remove
+	PriceMean      float64
+	Demand         int
+	Supply         int
+	TotalUnitsSold int
 }
 
 func (r *Receipt) Add(receipt Receipt) Receipt {
