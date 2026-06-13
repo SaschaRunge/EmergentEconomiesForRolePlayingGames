@@ -50,6 +50,10 @@ func (r *Receipt) MergeInto(receipts []Receipt) {
 	}
 }
 
+func EmptyReceipt(agentID int, commodity Commodity) Receipt {
+	return NewReceipt(agentID, commodity, 0, 0)
+}
+
 func NewAsk(agentID int, commodity Commodity, price float64, quantity int) Ask {
 	return Ask{
 		Order: Order{
@@ -81,8 +85,4 @@ func NewReceipt(agentID int, commodity Commodity, price float64, quantity int) R
 			Quantity:  quantity,
 		},
 	}
-}
-
-func EmptyReceipt(agentID int, commodity Commodity) Receipt {
-	return NewReceipt(agentID, commodity, 0, 0)
 }
