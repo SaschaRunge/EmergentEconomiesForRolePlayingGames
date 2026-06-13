@@ -44,6 +44,12 @@ func (r *Receipt) Add(receipt Receipt) {
 	}
 }
 
+func (r *Receipt) MergeInto(receipts []Receipt) {
+	for _, receipt := range receipts {
+		r.Add(receipt)
+	}
+}
+
 func NewAsk(agentID int, commodity Commodity, price float64, quantity int) Ask {
 	return Ask{
 		Order: Order{
