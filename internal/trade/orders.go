@@ -44,7 +44,7 @@ func (r *Receipt) Add(receipt Receipt) {
 	}
 }
 
-func (r *Receipt) MergeInto(receipts []Receipt) {
+func (r *Receipt) Merge(receipts []Receipt) {
 	for _, receipt := range receipts {
 		r.Add(receipt)
 	}

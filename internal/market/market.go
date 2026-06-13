@@ -66,7 +66,7 @@ func (s *Simulator) updateAgents(c commodity, receiptsByAgentID map[int][]receip
 		agentID := agent.GetID()
 
 		aggregateReceipt := trade.NewEmptyReceipt(agentID, c)
-		aggregateReceipt.MergeInto(receiptsByAgentID[agentID])
+		aggregateReceipt.Merge(receiptsByAgentID[agentID])
 
 		agent.PriceUpdateFromAsk(aggregateReceipt)
 		agent.PriceUpdateFromBid(aggregateReceipt)
