@@ -27,6 +27,10 @@ func Clamp(value, min, max float64) float64 {
 	return value
 }
 
+func WeightedMean(v1, v2, q1, q2 float64) float64 {
+	return (v1*q1 + v2*q2) / (q1 + q2)
+}
+
 func almostEquals(value1, value2, epsilon float64) bool {
 	return math.Abs(value1-value2) < epsilon
 }
