@@ -58,9 +58,10 @@ func (h *House) ResolveOffers(c commodity, asks []ask, bids []bid) map[int][]rec
 		}
 
 		quantityTraded := min(buyer.Quantity, seller.Quantity)
-		clearingPrice := (buyer.Price + seller.Price) / 2
 
 		if quantityTraded > 0 {
+			clearingPrice := (buyer.Price + seller.Price) / 2
+
 			buyer.Quantity -= quantityTraded
 			seller.Quantity -= quantityTraded
 

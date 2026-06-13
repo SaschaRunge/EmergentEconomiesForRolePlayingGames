@@ -40,6 +40,9 @@ type Agent struct {
 	id             int
 	rng            *rpgMath.RNG
 	commodityState map[commodity]CommodityState
+
+	ask ask
+	bid bid
 }
 
 func (r *Registry) New() *Agent {
@@ -54,6 +57,14 @@ func (r *Registry) New() *Agent {
 	return agent
 }
 
+func (a *Agent) CurrentAsk() ask {
+	return a.ask
+}
+
+func (a *Agent) CurrentBid() bid {
+	return a.bid
+}
+
 func (a *Agent) CreateAsk(c commodity, limit int) ask {
 	state, ok := a.commodityState[c]
 	if !ok {
@@ -63,7 +74,9 @@ func (a *Agent) CreateAsk(c commodity, limit int) ask {
 	askPrice := priceOf(state.priceBelief, a.rng)
 	ideal := a.determineSaleQuantity(c)
 	quantityToSell := int(math.Min(float64(ideal), float64(limit)))
-	return trade.NewAsk(a.id, c, askPrice, quantityToSell)
+
+	a.ask = trade.NewAsk(a.id, c, askPrice, quantityToSell)
+	return a.ask
 }
 
 func (a *Agent) CreateBid(c commodity, limit int) bid {
@@ -75,22 +88,28 @@ func (a *Agent) CreateBid(c commodity, limit int) bid {
 	bidPrice := priceOf(state.priceBelief, a.rng)
 	ideal := a.determinePurchaseQuantity(c)
 	quantityToBuy := int(math.Min(float64(ideal), float64(limit)))
-	return trade.NewBid(a.id, c, bidPrice, quantityToBuy)
+
+	a.bid = trade.NewBid(a.id, c, bidPrice, quantityToBuy)
+	return a.bid
+}
+
+func (a *Agent) GetID() int {
+	return a.id
 }
 
 // TODO: these need massive rework, the pseudocode is pretty flawed unfortunately
-func (a *Agent) PriceUpdateFromAsk(receipt trade.Receipt, placement ask) {
-	if receipt.Commodity != placement.Commodity {
-		panic("unhandled: comparing non matching receipt/placement")
+func (a *Agent) PriceUpdateFromAsk(receipt trade.Receipt) {
+	if receipt.Commodity != a.CurrentAsk().Commodity {
+		panic("unhandled: comparing non matching receipt")
 	}
 
-	state, ok := a.commodityState[placement.Commodity]
+	state, ok := a.commodityState[a.CurrentAsk().Commodity]
 	if !ok {
 		panic("unhandled missing commodity when creating order")
 	}
 
 	//TODO: paper has no solution for adjusting spread from ask
-	weight := 1. - float64(receipt.Quantity)/float64(placement.Quantity)
+	weight := 1. - float64(receipt.Quantity)/float64(a.CurrentAsk().Quantity)
 	displacement := weight * receipt.PriceMean
 
 	noUnitsSold := receipt.Quantity == 0
@@ -98,7 +117,7 @@ func (a *Agent) PriceUpdateFromAsk(receipt trade.Receipt, placement ask) {
 	if receipt.TotalUnitsSold > 0 {
 		marketShare = float64(receipt.Quantity) / float64(receipt.TotalUnitsSold)
 	}
-	earnedMoreThanExpected := placement.Price < receipt.Price
+	earnedMoreThanExpected := a.CurrentAsk().Price < receipt.Price
 
 	switch {
 	case noUnitsSold:
@@ -106,7 +125,7 @@ func (a *Agent) PriceUpdateFromAsk(receipt trade.Receipt, placement ask) {
 	case marketShare < 0.75:
 		state.priceBelief.TranslateBy(-1. / 7 * displacement)
 	case earnedMoreThanExpected:
-		overbid := (receipt.Price - placement.Price)
+		overbid := (receipt.Price - a.CurrentAsk().Price)
 		// weight doesn't make much sense to use as it basically means
 		//"the more we sold to that good price, the less we should increase our price"
 		state.priceBelief.TranslateBy(1.2 * weight * overbid)
@@ -116,20 +135,20 @@ func (a *Agent) PriceUpdateFromAsk(receipt trade.Receipt, placement ask) {
 		state.priceBelief.TranslateBy(-1. / 5 * state.historicalMean)
 	}
 
-	a.commodityState[placement.Commodity] = state
+	a.commodityState[a.CurrentAsk().Commodity] = state
 }
 
-func (a *Agent) PriceUpdateFromBid(receipt trade.Receipt, placement bid) {
-	if receipt.Commodity != placement.Commodity {
-		panic("unhandled: comparing non matching receipt/placement")
+func (a *Agent) PriceUpdateFromBid(receipt trade.Receipt) {
+	if receipt.Commodity != a.CurrentBid().Commodity {
+		panic("unhandled: comparing non matching receipt")
 	}
 
-	state, ok := a.commodityState[placement.Commodity]
+	state, ok := a.commodityState[a.CurrentBid().Commodity]
 	if !ok {
 		panic("unhandled missing commodity when creating order")
 	}
 
-	orderAtLeastHalfFilled := float64(receipt.Quantity)/float64(placement.Quantity) >= 0.5
+	orderAtLeastHalfFilled := float64(receipt.Quantity)/float64(a.CurrentBid().Quantity) >= 0.5
 	if orderAtLeastHalfFilled {
 		// contract by 20% rather than solely based on upper limit, contrary to paper
 		displacement := 0.1 * (state.priceBelief.Max - state.priceBelief.Min)
@@ -145,19 +164,19 @@ func (a *Agent) PriceUpdateFromBid(receipt trade.Receipt, placement bid) {
 		marketShare = float64(receipt.Quantity) / float64(receipt.TotalUnitsSold)
 	}
 	inventory := state.inventoryCapacity - state.inventorySpace
-	paidLessThanExpected := placement.Price > receipt.Price
-	offeredMoreThanHistoricalMean := placement.Price > state.historicalMean
+	paidLessThanExpected := a.CurrentBid().Price > receipt.Price
+	offeredMoreThanHistoricalMean := a.CurrentBid().Price > state.historicalMean
 
 	switch {
 	case marketShare < 1 && float64(inventory) < 1./4*float64(state.inventoryCapacity):
 		//TODO: does not seem correct, would amount to very little price change when face with scarcity
-		displacement := math.Abs(placement.Price-receipt.PriceMean) / receipt.PriceMean
+		displacement := math.Abs(a.CurrentBid().Price-receipt.PriceMean) / receipt.PriceMean
 		state.priceBelief.TranslateBy(displacement)
 	case paidLessThanExpected:
-		overbid := (placement.Price - receipt.Price)
+		overbid := (a.CurrentBid().Price - receipt.Price)
 		state.priceBelief.TranslateBy(-1.1 * overbid)
 	case receipt.Supply > receipt.Demand && offeredMoreThanHistoricalMean:
-		overbid := (placement.Price - state.historicalMean)
+		overbid := (a.CurrentBid().Price - state.historicalMean)
 		state.priceBelief.TranslateBy(-1.1 * overbid)
 	case receipt.Demand > receipt.Supply:
 		state.priceBelief.TranslateBy(0.2 * state.historicalMean)
@@ -165,7 +184,7 @@ func (a *Agent) PriceUpdateFromBid(receipt trade.Receipt, placement bid) {
 		state.priceBelief.TranslateBy(-0.2 * state.historicalMean)
 	}
 
-	a.commodityState[placement.Commodity] = state
+	a.commodityState[a.CurrentBid().Commodity] = state
 }
 
 func (a *Agent) determineSaleQuantity(c commodity) int {
