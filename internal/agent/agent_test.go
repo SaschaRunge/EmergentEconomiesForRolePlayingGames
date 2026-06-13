@@ -66,10 +66,10 @@ func TestDetermineSaleQuantity(t *testing.T) {
 
 	for _, c := range cases {
 		agent := Agent{
-			commodityState: map[commodity]CommodityState{trade.Wood: c.input},
+			commodityState: map[commodity]CommodityState{trade.CommodityWood: c.input},
 		}
 
-		actual := agent.determineSaleQuantity(trade.Wood)
+		actual := agent.determineSaleQuantity(trade.CommodityWood)
 		if actual != c.expected {
 			t.Errorf("case: %q, expected: %d, actual: %d", c.description, c.expected, actual)
 		}
@@ -136,10 +136,10 @@ func TestDeterminePurchaseQuantity(t *testing.T) {
 
 	for _, c := range cases {
 		agent := Agent{
-			commodityState: map[commodity]CommodityState{trade.Wood: c.input},
+			commodityState: map[commodity]CommodityState{trade.CommodityWood: c.input},
 		}
 
-		actual := agent.determinePurchaseQuantity(trade.Wood)
+		actual := agent.determinePurchaseQuantity(trade.CommodityWood)
 		if actual != c.expected {
 			t.Errorf("case: %q, expected: %d, actual: %d", c.description, c.expected, actual)
 		}

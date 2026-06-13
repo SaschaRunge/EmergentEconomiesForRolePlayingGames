@@ -3,5 +3,6 @@ package trade
 type Commodity int
 
 const (
-	Wood Commodity = iota
+	CommodityNone Commodity = iota
+	CommodityWood
 )
