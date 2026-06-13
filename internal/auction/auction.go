@@ -39,7 +39,7 @@ func New(daysToArchive int, rng *rpgMath.RNG) *House {
 }
 
 func (h *House) ResolveOffers(c commodity, asks []ask, bids []bid) map[int][]receipt {
-	receipts := make(map[int][]receipt)
+	receiptsByAgentID := make(map[int][]receipt)
 
 	rpgMath.Shuffle(h.rng, asks)
 	rpgMath.Shuffle(h.rng, bids)
@@ -68,8 +68,8 @@ func (h *House) ResolveOffers(c commodity, asks []ask, bids []bid) map[int][]rec
 			buyer.Quantity -= quantityTraded
 			seller.Quantity -= quantityTraded
 
-			receipts[buyer.AgentID] = append(receipts[buyer.AgentID], trade.NewReceipt(buyer.AgentID, c, clearingPrice, quantityTraded))
-			receipts[seller.AgentID] = append(receipts[seller.AgentID], trade.NewReceipt(seller.AgentID, c, clearingPrice, quantityTraded))
+			receiptsByAgentID[buyer.AgentID] = append(receiptsByAgentID[buyer.AgentID], trade.NewReceipt(buyer.AgentID, c, clearingPrice, quantityTraded))
+			receiptsByAgentID[seller.AgentID] = append(receiptsByAgentID[seller.AgentID], trade.NewReceipt(seller.AgentID, c, clearingPrice, quantityTraded))
 		}
 
 		if buyer.Quantity == 0 {
@@ -80,5 +80,5 @@ func (h *House) ResolveOffers(c commodity, asks []ask, bids []bid) map[int][]rec
 		}
 	}
 
-	return receipts
+	return receiptsByAgentID
 }

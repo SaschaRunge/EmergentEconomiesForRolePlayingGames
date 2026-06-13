@@ -61,12 +61,12 @@ func (s *Simulator) gatherOrders(c commodity) ([]ask, []bid) {
 	return asks, bids
 }
 
-func (s *Simulator) updateAgents(c commodity, receipts map[int][]receipt) {
+func (s *Simulator) updateAgents(c commodity, receiptsByAgentID map[int][]receipt) {
 	for _, agent := range s.registry.Agents {
 		agentID := agent.GetID()
 
 		aggregateReceipt := trade.NewEmptyReceipt(agentID, c)
-		aggregateReceipt.MergeInto(receipts[agentID])
+		aggregateReceipt.MergeInto(receiptsByAgentID[agentID])
 
 		agent.PriceUpdateFromAsk(aggregateReceipt)
 		agent.PriceUpdateFromBid(aggregateReceipt)
