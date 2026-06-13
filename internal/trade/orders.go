@@ -1,5 +1,9 @@
 package trade
 
+import (
+	rpgMath "github.com/SaschaRunge/Go/EmergentEconomiesForRolePlayingGames/internal/math"
+)
+
 type Order struct {
 	AgentID   int
 	Commodity Commodity
@@ -25,7 +29,7 @@ type Receipt struct {
 	TotalUnitsSold int
 }
 
-func (r *Receipt) Add(receipt Receipt) Receipt {
+func (r *Receipt) Add(receipt Receipt) {
 	if r.AgentID != receipt.AgentID {
 		panic("receipt contains mismatching agents")
 	}
@@ -34,13 +38,9 @@ func (r *Receipt) Add(receipt Receipt) Receipt {
 		panic("receipt contains mismatching commodities")
 	}
 
-	return Receipt{
-		Order: Order{
-			AgentID:   r.AgentID,
-			Commodity: r.Commodity,
-			Price:     r.Price + receipt.Price,
-			Quantity:  r.Quantity + receipt.Quantity,
-		},
+	if r.Quantity+receipt.Quantity > 0 {
+		r.Price = rpgMath.WeightedMean(r.Price, receipt.Price, float64(r.Quantity), float64(receipt.Quantity))
+		r.Quantity += receipt.Quantity
 	}
 }
 
