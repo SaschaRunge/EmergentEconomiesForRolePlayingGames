@@ -29,9 +29,12 @@ type Statistics struct {
 	AverageClearingPrice float64
 }
 
-func New(rng *rpgMath.RNG) House {
-	return House{
+func New(daysToArchive int, rng *rpgMath.RNG) *House {
+	return &House{
 		rng: rng,
+
+		daysToArchive: daysToArchive,
+		statistics:    []Statistics{},
 	}
 }
 
