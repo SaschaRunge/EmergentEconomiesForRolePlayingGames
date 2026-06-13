@@ -21,6 +21,10 @@ func (p *PriceRange) TranslateBy(displacement float64) {
 	}
 }
 
+func AlmostEquals(value1, value2, epsilon float64) bool {
+	return math.Abs(value1-value2) < epsilon
+}
+
 func Clamp(value, min, max float64) float64 {
 	value = math.Min(value, max)
 	value = math.Max(value, min)
@@ -29,10 +33,6 @@ func Clamp(value, min, max float64) float64 {
 
 func WeightedMean(v1, v2, q1, q2 float64) float64 {
 	return (v1*q1 + v2*q2) / (q1 + q2)
-}
-
-func almostEquals(value1, value2, epsilon float64) bool {
-	return math.Abs(value1-value2) < epsilon
 }
 
 func mean(values []float64) float64 {

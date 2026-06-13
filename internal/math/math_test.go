@@ -76,7 +76,7 @@ func TestMean(t *testing.T) {
 	for _, c := range cases {
 		mean := mean(c.input)
 
-		isNotEqual := !math.IsNaN(mean) && !almostEquals(mean, c.expected, c.epsilon)
+		isNotEqual := !math.IsNaN(mean) && !AlmostEquals(mean, c.expected, c.epsilon)
 		isUnexpectedNaN := !math.IsNaN(c.expected) && math.IsNaN(mean)
 		isNotNaNButShould := math.IsNaN(c.expected) && !math.IsNaN(mean)
 
@@ -145,7 +145,7 @@ func TestVariance(t *testing.T) {
 	for _, c := range cases {
 		variance := variance(c.input)
 
-		isNotEqual := !math.IsNaN(variance) && !almostEquals(variance, c.expected, c.epsilon)
+		isNotEqual := !math.IsNaN(variance) && !AlmostEquals(variance, c.expected, c.epsilon)
 		isUnexpectedNaN := !math.IsNaN(c.expected) && math.IsNaN(variance)
 		isNotNaNButShould := math.IsNaN(c.expected) && !math.IsNaN(variance)
 
@@ -215,7 +215,7 @@ func TestWeightedMean(t *testing.T) {
 	for _, c := range cases {
 		mean := WeightedMean(c.v1, c.v2, c.q1, c.q2)
 
-		isNotEqual := !math.IsInf(mean, 0) && !math.IsNaN(mean) && !almostEquals(mean, c.expected, c.epsilon)
+		isNotEqual := !math.IsInf(mean, 0) && !math.IsNaN(mean) && !AlmostEquals(mean, c.expected, c.epsilon)
 		isUnexpectedNaN := !math.IsNaN(c.expected) && math.IsNaN(mean)
 		isNotNaNButShould := math.IsNaN(c.expected) && !math.IsNaN(mean)
 		isUnexpectedInf := math.IsInf(mean, 0) && !math.IsInf(c.expected, 0)
