@@ -8,30 +8,6 @@ import (
 	"github.com/SaschaRunge/Go/EmergentEconomiesForRolePlayingGames/internal/trade"
 )
 
-type inventory struct {
-	capacity      int
-	idealQuantity int
-	quantity      int
-}
-
-func (i *inventory) AvailableSpace() int {
-	return i.capacity - i.quantity
-}
-
-func (i *inventory) Excess() int {
-	if i.quantity > i.idealQuantity {
-		return i.quantity - i.idealQuantity
-	}
-	return 0
-}
-
-type CommodityState struct {
-	inventory
-
-	historicalMean float64
-	priceBelief    rpgMath.PriceRange
-}
-
 type ask = trade.Ask
 type bid = trade.Bid
 type commodity = trade.Commodity
@@ -65,15 +41,52 @@ type Agent struct {
 	role     production.Role
 }
 
-// TODO: agents might need a start inventory, depending on how fast they need to come online
-func (r *Registry) New(currency float64, role production.Role) *Agent {
+func NewAgent(id int, rng *rpgMath.RNG, role production.Role) *Agent {
 	agent := &Agent{
-		id:             r.nextID,
-		rng:            r.rng,
+		id:             id,
+		rng:            rng,
 		commodityState: make(map[commodity]*CommodityState),
 
 		role: role,
 	}
+
+	for _, recipe := range role.Recipes {
+		for _, commodityUsed := range recipe.CommoditiesUsed {
+			_, isInput := recipe.Input[commodityUsed]
+			_, isOutput := recipe.Output[commodityUsed]
+
+			capacity := 0
+			idealQuantity := 0
+			quantity := 0
+
+			capacity = production.PlaceHolderBaseCapacity
+			if isInput && isOutput {
+				idealQuantity = capacity / 4
+				quantity = idealQuantity
+			} else if isInput {
+				idealQuantity = capacity / 2
+				quantity = idealQuantity
+			} else if isOutput {
+				idealQuantity = 0
+				quantity = 0
+			}
+
+			agent.commodityState[commodity(commodityUsed)] = &CommodityState{
+				inventory: inventory{
+					capacity:      capacity,
+					idealQuantity: idealQuantity,
+					quantity:      quantity,
+				},
+			}
+		}
+	}
+
+	return agent
+}
+
+// TODO: agents might need a start inventory, depending on how fast they need to come online
+func (r *Registry) New(currency float64, role production.Role) *Agent {
+	agent := NewAgent(r.nextID, r.rng, role)
 
 	r.Agents[r.nextID] = agent
 	r.nextID += 1
@@ -257,8 +270,8 @@ func (a *Agent) hasSpace(recipe production.Recipe) bool {
 		if !exists || state.AvailableSpace() < totalQuantityProduced {
 			return false
 		}
-
 	}
+
 	return true
 }
 
