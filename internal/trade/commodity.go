@@ -1,8 +1,8 @@
 package trade
 
+//go:generate stringer -type=Commodity
 type Commodity int
 
-//go:generate stringer -type=Commodity
 const (
 	CommodityNone Commodity = iota
 	CommodityFood
