@@ -4,16 +4,32 @@ import (
 	"math"
 
 	rpgMath "github.com/SaschaRunge/Go/EmergentEconomiesForRolePlayingGames/internal/math"
+	"github.com/SaschaRunge/Go/EmergentEconomiesForRolePlayingGames/internal/production"
 	"github.com/SaschaRunge/Go/EmergentEconomiesForRolePlayingGames/internal/trade"
 )
 
-type CommodityState struct {
-	inventoryCapacity int
+type inventory struct {
+	capacity      int
+	idealQuantity int
+	quantity      int
+}
 
-	inventorySpace  int
-	excessInventory int
-	historicalMean  float64
-	priceBelief     rpgMath.PriceRange
+func (i *inventory) AvailableSpace() int {
+	return i.capacity - i.quantity
+}
+
+func (i *inventory) Excess() int {
+	if i.quantity > i.idealQuantity {
+		return i.quantity - i.idealQuantity
+	}
+	return 0
+}
+
+type CommodityState struct {
+	inventory
+
+	historicalMean float64
+	priceBelief    rpgMath.PriceRange
 }
 
 type ask = trade.Ask
@@ -39,17 +55,25 @@ func NewRegistry(rng *rpgMath.RNG) Registry {
 type Agent struct {
 	id             int
 	rng            *rpgMath.RNG
-	commodityState map[commodity]CommodityState
+	commodityState map[commodity]*CommodityState
 
 	ask ask
 	bid bid
+
+	currency  float64
+	inventory map[commodity]int
+	role      production.Role
 }
 
-func (r *Registry) New() *Agent {
+// TODO: agents might need a start inventory, depending on how fast they need to come online
+func (r *Registry) New(currency float64, role production.Role) *Agent {
 	agent := &Agent{
 		id:             r.nextID,
 		rng:            r.rng,
-		commodityState: map[commodity]CommodityState{},
+		commodityState: make(map[commodity]*CommodityState),
+
+		inventory: make(map[commodity]int),
+		role:      role,
 	}
 
 	r.Agents[r.nextID] = agent
@@ -163,12 +187,12 @@ func (a *Agent) PriceUpdateFromBid(receipt trade.Receipt) {
 	if receipt.TotalUnitsSold > 0 {
 		marketShare = float64(receipt.Quantity) / float64(receipt.TotalUnitsSold)
 	}
-	inventory := state.inventoryCapacity - state.inventorySpace
+	quantityAvailable := state.quantity
 	paidLessThanExpected := a.CurrentBid().Price > receipt.Price
 	offeredMoreThanHistoricalMean := a.CurrentBid().Price > state.historicalMean
 
 	switch {
-	case marketShare < 1 && float64(inventory) < 1./4*float64(state.inventoryCapacity):
+	case marketShare < 1 && float64(quantityAvailable) < 1./4*float64(state.capacity):
 		//TODO: does not seem correct, would amount to very little price change when face with scarcity
 		displacement := math.Abs(a.CurrentBid().Price-receipt.PriceMean) / receipt.PriceMean
 		state.priceBelief.TranslateBy(displacement)
@@ -187,11 +211,52 @@ func (a *Agent) PriceUpdateFromBid(receipt trade.Receipt) {
 	a.commodityState[a.CurrentBid().Commodity] = state
 }
 
+func (a *Agent) PerformProduction() {
+	recipe := a.selectRecipe()
+	if recipe.Name == "" {
+		return
+	}
+
+	//TODO: maybe evaluate quantity in place and then assign to inventory
+	for c, quantity := range recipe.Input {
+		a.inventory[c] -= quantity
+	}
+
+	for c, quantity := range recipe.Output {
+		randomFactor := 1
+		if _, exists := recipe.OutputChance[c]; exists {
+			if recipe.OutputChance[c] <= a.rng.NumberBetween(0, 1) {
+				randomFactor = 0
+			}
+		}
+
+		a.inventory[c] += quantity * randomFactor
+	}
+}
+
+func (a *Agent) canProduce(recipe production.Recipe) bool {
+	for c, quantity := range recipe.Input {
+		if a.inventory[c] < quantity {
+			return false
+		}
+	}
+	return true
+}
+
+func (a *Agent) selectRecipe() production.Recipe {
+	for _, recipe := range a.role.Recipes {
+		if a.canProduce(recipe) {
+			return recipe
+		}
+	}
+	return production.Recipe{}
+}
+
 func (a *Agent) determineSaleQuantity(c commodity) int {
 	state := a.commodityState[c]
 
 	favorability := a.favorability(state.priceBelief, state.historicalMean)
-	amountToSell := int(math.Round(favorability * float64(state.excessInventory)))
+	amountToSell := int(math.Round(favorability * float64(state.Excess())))
 	return amountToSell
 }
 
@@ -199,7 +264,7 @@ func (a *Agent) determinePurchaseQuantity(c commodity) int {
 	state := a.commodityState[c]
 
 	favorability := 1 - a.favorability(state.priceBelief, state.historicalMean)
-	amountToBuy := int(math.Round(favorability * float64(state.inventorySpace)))
+	amountToBuy := int(math.Round(favorability * float64(state.AvailableSpace())))
 	return amountToBuy
 }
 

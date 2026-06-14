@@ -10,63 +10,78 @@ func TestDetermineSaleQuantity(t *testing.T) {
 	cases := []struct {
 		description string
 		expected    int
-		input       CommodityState
+		input       *CommodityState
 	}{
 		{
 			description: "nothing to sell",
 			expected:    0,
-			input: CommodityState{
-				inventorySpace:  0,
-				excessInventory: 0,
-				historicalMean:  10,
-				priceBelief:     rpgMath.PriceRange{Min: 5, Max: 15},
+			input: &CommodityState{
+				inventory: inventory{
+					capacity:      10,
+					idealQuantity: 10,
+					quantity:      10,
+				},
+				historicalMean: 10,
+				priceBelief:    rpgMath.PriceRange{Min: 5, Max: 15},
 			},
 		},
 		{
 			description: "historical mean lower than price belief",
 			expected:    0,
-			input: CommodityState{
-				inventorySpace:  0,
-				excessInventory: 10,
-				historicalMean:  10,
-				priceBelief:     rpgMath.PriceRange{Min: 15, Max: 30},
+			input: &CommodityState{
+				inventory: inventory{
+					capacity:      10,
+					idealQuantity: 0,
+					quantity:      10,
+				},
+				historicalMean: 10,
+				priceBelief:    rpgMath.PriceRange{Min: 15, Max: 30},
 			},
 		},
 		{
 			description: "historical mean higher than price belief",
 			expected:    10,
-			input: CommodityState{
-				inventorySpace:  0,
-				excessInventory: 10,
-				historicalMean:  40,
-				priceBelief:     rpgMath.PriceRange{Min: 15, Max: 30},
+			input: &CommodityState{
+				inventory: inventory{
+					capacity:      10,
+					idealQuantity: 0,
+					quantity:      10,
+				},
+				historicalMean: 40,
+				priceBelief:    rpgMath.PriceRange{Min: 15, Max: 30},
 			},
 		},
 		{
 			description: "historical mean is at 20% of price belief range",
 			expected:    2,
-			input: CommodityState{
-				inventorySpace:  0,
-				excessInventory: 10,
-				historicalMean:  12,
-				priceBelief:     rpgMath.PriceRange{Min: 10, Max: 20},
+			input: &CommodityState{
+				inventory: inventory{
+					capacity:      10,
+					idealQuantity: 0,
+					quantity:      10,
+				},
+				historicalMean: 12,
+				priceBelief:    rpgMath.PriceRange{Min: 10, Max: 20},
 			},
 		},
 		{
 			description: "historical mean is at 80% of price belief range",
 			expected:    8,
-			input: CommodityState{
-				inventorySpace:  0,
-				excessInventory: 10,
-				historicalMean:  18,
-				priceBelief:     rpgMath.PriceRange{Min: 10, Max: 20},
+			input: &CommodityState{
+				inventory: inventory{
+					capacity:      10,
+					idealQuantity: 0,
+					quantity:      10,
+				},
+				historicalMean: 18,
+				priceBelief:    rpgMath.PriceRange{Min: 10, Max: 20},
 			},
 		},
 	}
 
 	for _, c := range cases {
 		agent := Agent{
-			commodityState: map[commodity]CommodityState{trade.CommodityWood: c.input},
+			commodityState: map[commodity]*CommodityState{trade.CommodityWood: c.input},
 		}
 
 		actual := agent.determineSaleQuantity(trade.CommodityWood)
@@ -80,63 +95,78 @@ func TestDeterminePurchaseQuantity(t *testing.T) {
 	cases := []struct {
 		description string
 		expected    int
-		input       CommodityState
+		input       *CommodityState
 	}{
 		{
 			description: "no inventory space",
 			expected:    0,
-			input: CommodityState{
-				inventorySpace:  0,
-				excessInventory: 0,
-				historicalMean:  10,
-				priceBelief:     rpgMath.PriceRange{Min: 5, Max: 15},
+			input: &CommodityState{
+				inventory: inventory{
+					capacity:      10,
+					idealQuantity: 10,
+					quantity:      10,
+				},
+				historicalMean: 10,
+				priceBelief:    rpgMath.PriceRange{Min: 5, Max: 15},
 			},
 		},
 		{
 			description: "historical mean lower than price belief",
 			expected:    10,
-			input: CommodityState{
-				inventorySpace:  10,
-				excessInventory: 0,
-				historicalMean:  10,
-				priceBelief:     rpgMath.PriceRange{Min: 15, Max: 30},
+			input: &CommodityState{
+				inventory: inventory{
+					capacity:      10,
+					idealQuantity: 10,
+					quantity:      0,
+				},
+				historicalMean: 10,
+				priceBelief:    rpgMath.PriceRange{Min: 15, Max: 30},
 			},
 		},
 		{
 			description: "historical mean higher than price belief",
 			expected:    0,
-			input: CommodityState{
-				inventorySpace:  10,
-				excessInventory: 0,
-				historicalMean:  40,
-				priceBelief:     rpgMath.PriceRange{Min: 15, Max: 30},
+			input: &CommodityState{
+				inventory: inventory{
+					capacity:      10,
+					idealQuantity: 10,
+					quantity:      0,
+				},
+				historicalMean: 40,
+				priceBelief:    rpgMath.PriceRange{Min: 15, Max: 30},
 			},
 		},
 		{
 			description: "historical mean is at 20% of price belief range",
 			expected:    8,
-			input: CommodityState{
-				inventorySpace:  10,
-				excessInventory: 0,
-				historicalMean:  12,
-				priceBelief:     rpgMath.PriceRange{Min: 10, Max: 20},
+			input: &CommodityState{
+				inventory: inventory{
+					capacity:      10,
+					idealQuantity: 10,
+					quantity:      0,
+				},
+				historicalMean: 12,
+				priceBelief:    rpgMath.PriceRange{Min: 10, Max: 20},
 			},
 		},
 		{
 			description: "historical mean is at 80% of price belief range",
 			expected:    2,
-			input: CommodityState{
-				inventorySpace:  10,
-				excessInventory: 0,
-				historicalMean:  18,
-				priceBelief:     rpgMath.PriceRange{Min: 10, Max: 20},
+			input: &CommodityState{
+				inventory: inventory{
+					capacity:      10,
+					idealQuantity: 10,
+					quantity:      0,
+				},
+				historicalMean: 18,
+				priceBelief:    rpgMath.PriceRange{Min: 10, Max: 20},
 			},
 		},
 	}
 
 	for _, c := range cases {
 		agent := Agent{
-			commodityState: map[commodity]CommodityState{trade.CommodityWood: c.input},
+			commodityState: map[commodity]*CommodityState{trade.CommodityWood: c.input},
 		}
 
 		actual := agent.determinePurchaseQuantity(trade.CommodityWood)
