@@ -53,16 +53,16 @@ func NewRegistry(rng *rpgMath.RNG) Registry {
 }
 
 type Agent struct {
-	id             int
-	rng            *rpgMath.RNG
+	id  int
+	rng *rpgMath.RNG
+	// TODO: have to initialize and decide how to make sure what types of commodity an agent trades in
 	commodityState map[commodity]*CommodityState
 
 	ask ask
 	bid bid
 
-	currency  float64
-	inventory map[commodity]int
-	role      production.Role
+	currency float64
+	role     production.Role
 }
 
 // TODO: agents might need a start inventory, depending on how fast they need to come online
@@ -72,8 +72,7 @@ func (r *Registry) New(currency float64, role production.Role) *Agent {
 		rng:            r.rng,
 		commodityState: make(map[commodity]*CommodityState),
 
-		inventory: make(map[commodity]int),
-		role:      role,
+		role: role,
 	}
 
 	r.Agents[r.nextID] = agent
@@ -213,13 +212,13 @@ func (a *Agent) PriceUpdateFromBid(receipt trade.Receipt) {
 
 func (a *Agent) PerformProduction() {
 	recipe := a.selectRecipe()
-	if recipe.Name == "" {
+	if recipe.Name == "" || !a.canProduce(recipe) {
 		return
 	}
 
 	//TODO: maybe evaluate quantity in place and then assign to inventory
 	for c, quantity := range recipe.Input {
-		a.inventory[c] -= quantity
+		a.commodityState[c].quantity -= quantity
 	}
 
 	for c, quantity := range recipe.Output {
@@ -230,15 +229,35 @@ func (a *Agent) PerformProduction() {
 			}
 		}
 
-		a.inventory[c] += quantity * randomFactor
+		a.commodityState[c].quantity += quantity * randomFactor
 	}
 }
 
 func (a *Agent) canProduce(recipe production.Recipe) bool {
+	return a.hasIngredients(recipe) && a.hasSpace(recipe)
+}
+
+func (a *Agent) hasIngredients(recipe production.Recipe) bool {
 	for c, quantity := range recipe.Input {
-		if a.inventory[c] < quantity {
+		state, exists := a.commodityState[c]
+		if !exists || state.quantity < quantity {
 			return false
 		}
+	}
+	return true
+}
+
+func (a *Agent) hasSpace(recipe production.Recipe) bool {
+	for c, quantity := range recipe.Output {
+		state, exists := a.commodityState[c]
+		input, _ := recipe.Input[c]
+
+		totalQuantityProduced := quantity - input
+
+		if !exists || state.AvailableSpace() < totalQuantityProduced {
+			return false
+		}
+
 	}
 	return true
 }
