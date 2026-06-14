@@ -1,15 +1,18 @@
 package production
 
-import (
-	rpgMath "github.com/SaschaRunge/Go/EmergentEconomiesForRolePlayingGames/internal/math"
-	"github.com/SaschaRunge/Go/EmergentEconomiesForRolePlayingGames/internal/trade"
-)
-
-type commodity = trade.Commodity
-
 type Role struct {
-	rng *rpgMath.RNG
-
 	Name    string
 	Recipes []Recipe
+}
+
+func loadRoles() map[string]Role {
+	return map[string]Role{
+		"Blacksmith": {
+			Name: "Blacksmith",
+
+			Recipes: []Recipe{
+				RecipeRegistry["Iron"],
+			},
+		},
+	}
 }
