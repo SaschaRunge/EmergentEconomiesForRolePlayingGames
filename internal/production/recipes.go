@@ -2,7 +2,6 @@ package production
 
 import (
 	"github.com/SaschaRunge/Go/EmergentEconomiesForRolePlayingGames/internal/trade"
-	"slices"
 )
 
 const (
@@ -11,12 +10,17 @@ const (
 )
 
 type Recipe struct {
-	Name         string
-	Consumes     []commodity
-	Produces     []commodity
-	Input        map[commodity]int
-	Output       map[commodity]int
-	OutputChance map[commodity]float64
+	Name            string
+	CommoditiesUsed []CommodityUsage
+	Input           map[commodity]int
+	Output          map[commodity]int
+	OutputChance    map[commodity]float64
+}
+
+type CommodityUsage struct {
+	Commodity commodity
+	IsInput   bool
+	IsOutput  bool
 }
 
 func loadRecipes() map[string]Recipe {
@@ -39,21 +43,28 @@ func loadRecipes() map[string]Recipe {
 
 func attachCommoditiesUsed(recipeRegistry map[string]Recipe) map[string]Recipe {
 	for name, recipe := range recipeRegistry {
-		consumes := []commodity{}
-		produces := []commodity{}
-
 		for commodity := range recipe.Input {
-			consumes = append(consumes, commodity)
+			recipe.CommoditiesUsed = append(recipe.CommoditiesUsed, CommodityUsage{
+				Commodity: commodity,
+				IsInput:   true,
+			})
 		}
 		for commodity := range recipe.Output {
-			produces = append(produces, commodity)
+			isInput := false
+			for i, input := range recipe.CommoditiesUsed {
+				if input.Commodity == commodity {
+					recipe.CommoditiesUsed[i].IsOutput = true
+					isInput = true
+					break
+				}
+			}
+			if !isInput {
+				recipe.CommoditiesUsed = append(recipe.CommoditiesUsed, CommodityUsage{
+					Commodity: commodity,
+					IsOutput:  true,
+				})
+			}
 		}
-
-		slices.Sort(consumes)
-		recipe.Consumes = slices.Compact(consumes)
-
-		slices.Sort(produces)
-		recipe.Produces = slices.Compact(produces)
 
 		recipeRegistry[name] = recipe
 	}
