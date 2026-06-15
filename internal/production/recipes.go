@@ -11,11 +11,12 @@ const (
 )
 
 type Recipe struct {
-	Name            string
-	CommoditiesUsed []commodity
-	Input           map[commodity]int
-	Output          map[commodity]int
-	OutputChance    map[commodity]float64
+	Name         string
+	Consumes     []commodity
+	Produces     []commodity
+	Input        map[commodity]int
+	Output       map[commodity]int
+	OutputChance map[commodity]float64
 }
 
 func loadRecipes() map[string]Recipe {
@@ -38,20 +39,21 @@ func loadRecipes() map[string]Recipe {
 
 func attachCommoditiesUsed(recipeRegistry map[string]Recipe) map[string]Recipe {
 	for name, recipe := range recipeRegistry {
-		commoditiesUsed := []commodity{}
+		consumes := []commodity{}
+		produces := []commodity{}
 
 		for commodity := range recipe.Input {
-			commoditiesUsed = append(commoditiesUsed, commodity)
+			consumes = append(consumes, commodity)
 		}
 		for commodity := range recipe.Output {
-			commoditiesUsed = append(commoditiesUsed, commodity)
-		}
-		for commodity := range recipe.OutputChance {
-			commoditiesUsed = append(commoditiesUsed, commodity)
+			produces = append(produces, commodity)
 		}
 
-		slices.Sort(commoditiesUsed)
-		recipe.CommoditiesUsed = slices.Compact(commoditiesUsed)
+		slices.Sort(consumes)
+		recipe.Consumes = slices.Compact(consumes)
+
+		slices.Sort(produces)
+		recipe.Produces = slices.Compact(produces)
 
 		recipeRegistry[name] = recipe
 	}

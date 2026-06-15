@@ -2,6 +2,7 @@ package agent
 
 import (
 	"math"
+	"slices"
 
 	rpgMath "github.com/SaschaRunge/Go/EmergentEconomiesForRolePlayingGames/internal/math"
 	"github.com/SaschaRunge/Go/EmergentEconomiesForRolePlayingGames/internal/production"
@@ -50,35 +51,76 @@ func NewAgent(id int, rng *rpgMath.RNG, role production.Role) *Agent {
 		role: role,
 	}
 
+	type commodityUsage struct {
+		commodity commodity
+		isInput   bool
+		isOutput  bool
+	}
+
+	trackedCommodities := []commodityUsage{}
+
 	for _, recipe := range role.Recipes {
-		for _, commodityUsed := range recipe.CommoditiesUsed {
-			_, isInput := recipe.Input[commodityUsed]
-			_, isOutput := recipe.Output[commodityUsed]
-
-			capacity := 0
-			idealQuantity := 0
-			quantity := 0
-
-			capacity = production.PlaceHolderBaseCapacity
-			if isInput && isOutput {
-				idealQuantity = capacity / 4
-				quantity = idealQuantity
-			} else if isInput {
-				idealQuantity = capacity / 2
-				quantity = idealQuantity
-			} else if isOutput {
-				idealQuantity = 0
-				quantity = 0
-			}
-
-			agent.commodityState[commodity(commodityUsed)] = &CommodityState{
-				inventory: inventory{
-					capacity:      capacity,
-					idealQuantity: idealQuantity,
-					quantity:      quantity,
-				},
-			}
+		for _, c := range recipe.Consumes {
+			trackedCommodities = append(trackedCommodities, commodityUsage{
+				commodity: c,
+				isInput:   true,
+			})
 		}
+
+		for _, c := range recipe.Produces {
+			trackedCommodities = append(trackedCommodities, commodityUsage{
+				commodity: c,
+				isOutput:  true,
+			})
+		}
+	}
+
+	slices.SortFunc(trackedCommodities, func(a, b commodityUsage) int {
+		return int(a.commodity) - int(b.commodity)
+	})
+
+	compactTrackedCommodities := make([]commodityUsage, 0, len(trackedCommodities))
+	compactTrackedCommodities = append(compactTrackedCommodities, trackedCommodities[0])
+	lastCompacted := trackedCommodities[0]
+	for i := 1; i < len(trackedCommodities); i++ {
+		if trackedCommodities[i].commodity == lastCompacted.commodity {
+			lastCompacted.isInput = trackedCommodities[i].isInput || lastCompacted.isInput
+			lastCompacted.isOutput = trackedCommodities[i].isOutput || lastCompacted.isOutput
+		} else {
+			compactTrackedCommodities[len(compactTrackedCommodities)-1] = lastCompacted
+			lastCompacted = commodityUsage{
+				commodity: trackedCommodities[i].commodity,
+				isInput:   trackedCommodities[i].isInput,
+				isOutput:  trackedCommodities[i].isOutput,
+			}
+			compactTrackedCommodities = append(compactTrackedCommodities, lastCompacted)
+		}
+	}
+	compactTrackedCommodities[len(compactTrackedCommodities)-1] = lastCompacted
+
+	/*
+		capacity := 0
+		idealQuantity := 0
+		quantity := 0
+
+		capacity = production.PlaceHolderBaseCapacity
+		if isInput && isOutput {
+			idealQuantity = capacity / 4
+			quantity = idealQuantity
+		} else if isInput {
+			idealQuantity = capacity / 2
+			quantity = idealQuantity
+		} else if isOutput {
+			idealQuantity = 0
+			quantity = 0
+		}*/
+
+	agent.commodityState[commodity(commodityUsed)] = &CommodityState{
+		inventory: inventory{
+			capacity:      capacity,
+			idealQuantity: idealQuantity,
+			quantity:      quantity,
+		},
 	}
 
 	return agent
