@@ -199,30 +199,30 @@ func TestPerformProduction(t *testing.T) {
 		{
 			description: "simple",
 			expected: commodityStateByCommodity{
-				trade.CommodityIronOre: {
+				trade.CommodityFood: {
 					inventory: inventory{
-						capacity:      10,
-						idealQuantity: 0,
-						quantity:      7,
+						capacity:      20,
+						idealQuantity: 3,
+						quantity:      2,
 					},
 				},
 				trade.CommodityWood: {
 					inventory: inventory{
-						capacity:      10,
-						idealQuantity: 0,
-						quantity:      9,
+						capacity:      20,
+						idealQuantity: 3,
+						quantity:      2,
 					},
 				},
-				trade.CommodityFood: {
+				trade.CommodityIronOre: {
 					inventory: inventory{
-						capacity:      10,
-						idealQuantity: 0,
-						quantity:      9,
+						capacity:      20,
+						idealQuantity: 9,
+						quantity:      6,
 					},
 				},
 				trade.CommodityIron: {
 					inventory: inventory{
-						capacity:      10,
+						capacity:      20,
 						idealQuantity: 0,
 						quantity:      1,
 					},
