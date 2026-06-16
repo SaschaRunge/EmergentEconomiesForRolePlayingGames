@@ -230,6 +230,141 @@ func TestPerformProduction(t *testing.T) {
 			},
 			agent: NewAgent(0, rng, production.RoleRegistry["Blacksmith"]),
 		},
+		{
+			description: "missing input",
+			expected: commodityStateByCommodity{
+				trade.CommodityFood: {
+					inventory: inventory{
+						capacity:      20,
+						idealQuantity: 3,
+						quantity:      3,
+					},
+				},
+				trade.CommodityWood: {
+					inventory: inventory{
+						capacity:      20,
+						idealQuantity: 3,
+						quantity:      3,
+					},
+				},
+				trade.CommodityIronOre: {
+					inventory: inventory{
+						capacity:      20,
+						idealQuantity: 9,
+						quantity:      2,
+					},
+				},
+				trade.CommodityIron: {
+					inventory: inventory{
+						capacity:      20,
+						idealQuantity: 0,
+						quantity:      0,
+					},
+				},
+			},
+			agent: &Agent{
+				id:  0,
+				rng: rng,
+				commodityState: commodityStateByCommodity{
+					trade.CommodityFood: {
+						inventory: inventory{
+							capacity:      20,
+							idealQuantity: 3,
+							quantity:      3,
+						},
+					},
+					trade.CommodityWood: {
+						inventory: inventory{
+							capacity:      20,
+							idealQuantity: 3,
+							quantity:      3,
+						},
+					},
+					trade.CommodityIronOre: {
+						inventory: inventory{
+							capacity:      20,
+							idealQuantity: 9,
+							quantity:      2,
+						},
+					},
+					trade.CommodityIron: {
+						inventory: inventory{
+							capacity:      20,
+							idealQuantity: 0,
+							quantity:      0,
+						},
+					}},
+
+				role: production.RoleRegistry["Blacksmith"],
+			},
+		},
+		{
+			description: "no capacity",
+			expected: commodityStateByCommodity{
+				trade.CommodityFood: {
+					inventory: inventory{
+						capacity:      20,
+						idealQuantity: 3,
+						quantity:      3,
+					},
+				},
+				trade.CommodityWood: {
+					inventory: inventory{
+						capacity:      20,
+						idealQuantity: 3,
+						quantity:      3,
+					},
+				},
+				trade.CommodityIronOre: {
+					inventory: inventory{
+						capacity:      20,
+						idealQuantity: 9,
+						quantity:      5,
+					},
+				},
+				trade.CommodityIron: {
+					inventory: inventory{
+						capacity:      5,
+						idealQuantity: 0,
+						quantity:      5,
+					},
+				},
+			},
+			agent: &Agent{
+				id:  0,
+				rng: rng,
+				commodityState: commodityStateByCommodity{
+					trade.CommodityFood: {
+						inventory: inventory{
+							capacity:      20,
+							idealQuantity: 3,
+							quantity:      3,
+						},
+					},
+					trade.CommodityWood: {
+						inventory: inventory{
+							capacity:      20,
+							idealQuantity: 3,
+							quantity:      3,
+						},
+					},
+					trade.CommodityIronOre: {
+						inventory: inventory{
+							capacity:      20,
+							idealQuantity: 9,
+							quantity:      5,
+						},
+					},
+					trade.CommodityIron: {
+						inventory: inventory{
+							capacity:      5,
+							idealQuantity: 0,
+							quantity:      5,
+						},
+					}},
+				role: production.RoleRegistry["Blacksmith"],
+			},
+		},
 	}
 
 	for _, c := range cases {
