@@ -14,5 +14,12 @@ func loadRoles() map[string]Role {
 				RecipeRegistry["Iron"],
 			},
 		},
+		"Farmer": {
+			Name: "Farmer",
+
+			Recipes: []Recipe{
+				RecipeRegistry["Food"],
+			},
+		},
 	}
 }

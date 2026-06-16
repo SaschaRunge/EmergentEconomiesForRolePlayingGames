@@ -377,6 +377,64 @@ func TestPerformProduction(t *testing.T) {
 	}
 }
 
+func TestPerformProductionOutputChance(t *testing.T) {
+	epsilon := 0.0001
+	rng := rpgMath.NewRNG(42)
+
+	test := struct {
+		description string
+		expected    commodityStateByCommodity
+		agent       *Agent
+	}{
+		description: "test output chance",
+		expected: commodityStateByCommodity{
+			trade.CommodityFood: {
+				inventory: inventory{
+					capacity:      20,
+					idealQuantity: 0,
+					quantity:      4,
+				},
+			},
+			trade.CommodityWood: {
+				inventory: inventory{
+					capacity:      20,
+					idealQuantity: 3,
+					quantity:      2,
+				},
+			},
+			trade.CommodityTools: {
+				inventory: inventory{
+					capacity:      20,
+					idealQuantity: 2,
+					quantity:      2,
+				},
+			},
+		},
+		agent: NewAgent(0, rng, production.RoleRegistry["Farmer"]),
+	}
+
+	test.agent.PerformProduction()
+
+	var state commodityStateByCommodity = test.agent.commodityState
+	if !commodityStateMapEqual(state, test.expected, epsilon) {
+		t.Errorf("case: %q:\nexpected: \n%v\nactual:\n%v", test.description, test.expected, state)
+	}
+
+	tools := 0
+	rounds := 10000
+	for range rounds {
+		newAgent := NewAgent(0, rng, production.RoleRegistry["Farmer"])
+		newAgent.PerformProduction()
+		tools += newAgent.commodityState[trade.CommodityTools].quantity
+	}
+
+	margin := 100
+	expected := 19000
+	if tools < expected-margin || tools > expected+margin {
+		t.Errorf("case: %q: expected: %d±%d actual: %d", "test multiple rounds", expected, margin, tools)
+	}
+}
+
 func commodityStateMapEqual(c1, c2 commodityStateByCommodity, epsilon float64) bool {
 	if len(c1) != len(c2) {
 		return false
