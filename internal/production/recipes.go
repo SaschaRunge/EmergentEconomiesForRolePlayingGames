@@ -59,6 +59,60 @@ func loadRecipes() map[string]Recipe {
 				trade.CommodityFood: 2,
 			},
 		},
+		"Wood": {
+			Name: "Wood",
+			Input: map[commodity]int{
+				trade.CommodityTools: 1,
+			},
+			Output: map[commodity]int{
+				trade.CommodityWood:  3,
+				trade.CommodityTools: 1,
+			},
+			OutputChance: map[commodity]float64{
+				trade.CommodityTools: 0.9,
+			},
+		},
+		"WoodNoFood": {
+			Name: "WoodNoFood",
+			Output: map[commodity]int{
+				trade.CommodityWood: 1,
+			},
+		},
+		"IronOre": {
+			Name: "IronOre",
+			Input: map[commodity]int{
+				trade.CommodityFood:  1,
+				trade.CommodityTools: 1,
+			},
+			Output: map[commodity]int{
+				trade.CommodityIronOre: 3,
+				trade.CommodityTools:   1,
+			},
+			OutputChance: map[commodity]float64{
+				trade.CommodityTools: 0.9,
+			},
+		},
+		"IronOreNoTools": {
+			Name: "IronOreNoTools",
+			Input: map[commodity]int{
+				trade.CommodityFood: 1,
+				trade.CommodityWood: 1,
+			},
+			Output: map[commodity]int{
+				trade.CommodityIronOre: 2,
+			},
+		},
+		"Tools": {
+			Name: "Tools",
+			Input: map[commodity]int{
+				trade.CommodityFood: 1,
+				trade.CommodityWood: 1,
+				trade.CommodityIron: 1,
+			},
+			Output: map[commodity]int{
+				trade.CommodityTools: 1,
+			},
+		},
 	}
 
 	return attachCommoditiesUsed(recipeRegistry)
