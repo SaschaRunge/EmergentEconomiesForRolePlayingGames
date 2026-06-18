@@ -228,7 +228,7 @@ func TestPerformProduction(t *testing.T) {
 					},
 				},
 			},
-			agent: NewAgent(0, rng, production.RoleRegistry["Blacksmith"]),
+			agent: NewAgent(0, rng, 0, production.RoleRegistry["Blacksmith"]),
 		},
 		{
 			description: "missing input",
@@ -410,7 +410,7 @@ func TestPerformProductionOutputChance(t *testing.T) {
 				},
 			},
 		},
-		agent: NewAgent(0, rng, production.RoleRegistry["Farmer"]),
+		agent: NewAgent(0, rng, 0, production.RoleRegistry["Farmer"]),
 	}
 
 	test.agent.PerformProduction()
@@ -423,7 +423,7 @@ func TestPerformProductionOutputChance(t *testing.T) {
 	tools := 0
 	rounds := 10000
 	for range rounds {
-		newAgent := NewAgent(0, rng, production.RoleRegistry["Farmer"])
+		newAgent := NewAgent(0, rng, 0, production.RoleRegistry["Farmer"])
 		newAgent.PerformProduction()
 		tools += newAgent.commodityState[trade.CommodityTools].quantity
 	}

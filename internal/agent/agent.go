@@ -16,13 +16,17 @@ type Registry struct {
 	Agents map[int]*Agent
 	nextID int
 
+	targetAmount int
+
 	rng *rpgMath.RNG
 }
 
-func NewRegistry(rng *rpgMath.RNG) Registry {
+func NewRegistry(targetAmount int, rng *rpgMath.RNG) Registry {
 	return Registry{
 		Agents: map[int]*Agent{},
 		nextID: 0,
+
+		targetAmount: targetAmount,
 
 		rng: rng,
 	}
@@ -41,13 +45,14 @@ type Agent struct {
 	role     production.Role
 }
 
-func NewAgent(id int, rng *rpgMath.RNG, role production.Role) *Agent {
+func NewAgent(id int, rng *rpgMath.RNG, currency float64, role production.Role) *Agent {
 	agent := &Agent{
 		id:             id,
 		rng:            rng,
 		commodityState: make(map[commodity]*CommodityState),
 
-		role: role,
+		currency: currency,
+		role:     role,
 	}
 
 	for _, recipe := range agent.role.Recipes {
@@ -92,8 +97,8 @@ func NewAgent(id int, rng *rpgMath.RNG, role production.Role) *Agent {
 }
 
 // TODO: agents might need a start inventory, depending on how fast they need to come online
-func (r *Registry) New(currency float64, role production.Role) *Agent {
-	agent := NewAgent(r.nextID, r.rng, role)
+func (r *Registry) AddAgent(currency float64, role production.Role) *Agent {
+	agent := NewAgent(r.nextID, r.rng, currency, role)
 
 	r.Agents[r.nextID] = agent
 	r.nextID += 1

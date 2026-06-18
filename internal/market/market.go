@@ -4,12 +4,14 @@ import (
 	"github.com/SaschaRunge/Go/EmergentEconomiesForRolePlayingGames/internal/agent"
 	"github.com/SaschaRunge/Go/EmergentEconomiesForRolePlayingGames/internal/auction"
 	rpgMath "github.com/SaschaRunge/Go/EmergentEconomiesForRolePlayingGames/internal/math"
+	"github.com/SaschaRunge/Go/EmergentEconomiesForRolePlayingGames/internal/production"
 	"github.com/SaschaRunge/Go/EmergentEconomiesForRolePlayingGames/internal/trade"
 )
 
 // TODO: will have to play with that number
 const (
-	daysToArchive = 14
+	daysToArchive        = 14
+	targetNumberOfAgents = 1000
 )
 
 type ask = trade.Ask
@@ -25,10 +27,14 @@ type Simulator struct {
 	rng *rpgMath.RNG
 }
 
-func (s *Simulator) Init() {
+func (s *Simulator) chooseAgentRole() production.Role {
+	return production.Role{}
+}
+
+func (s *Simulator) New() {
 	//TODO: use s.rng to seed the rng of auctionHouse and Registry
 	s.auctionHouse = auction.New(daysToArchive, s.rng)
-	s.registry = agent.NewRegistry(s.rng)
+	s.registry = agent.NewRegistry(targetNumberOfAgents, s.rng)
 }
 
 func (s *Simulator) Run(rounds int) {
