@@ -21,17 +21,6 @@ type Registry struct {
 	rng *rpgMath.RNG
 }
 
-func NewRegistry(targetAmount int, rng *rpgMath.RNG) Registry {
-	return Registry{
-		Agents: map[int]*Agent{},
-		nextID: 0,
-
-		targetAmount: targetAmount,
-
-		rng: rng,
-	}
-}
-
 type Agent struct {
 	id  int
 	rng *rpgMath.RNG
@@ -45,60 +34,20 @@ type Agent struct {
 	role     production.Role
 }
 
-func NewAgent(id int, rng *rpgMath.RNG, currency float64, role production.Role) *Agent {
-	agent := &Agent{
-		id:             id,
-		rng:            rng,
-		commodityState: make(map[commodity]*CommodityState),
+func NewRegistry(targetAmount int, rng *rpgMath.RNG) Registry {
+	return Registry{
+		Agents: map[int]*Agent{},
+		nextID: 0,
 
-		currency: currency,
-		role:     role,
+		targetAmount: targetAmount,
+
+		rng: rng,
 	}
-
-	for _, recipe := range agent.role.Recipes {
-		for _, commodityUsed := range recipe.CommoditiesUsed {
-			var capacity int
-			var idealQuantity int
-			var quantity int
-
-			// TODO: arbitrary for now, might need tweaking
-			// also initialize priceBelief and historicalMean to some value
-			capacity = 20
-			switch {
-			case commodityUsed.IsInput && commodityUsed.IsOutput:
-				idealQuantity = recipe.Input[commodityUsed.Commodity] * 2
-				quantity = idealQuantity
-			case commodityUsed.IsInput:
-				idealQuantity = recipe.Input[commodityUsed.Commodity] * 3
-				quantity = idealQuantity
-			case commodityUsed.IsOutput:
-				idealQuantity = 0
-				quantity = idealQuantity
-			}
-
-			if _, exists := agent.commodityState[commodityUsed.Commodity]; !exists {
-				agent.commodityState[commodityUsed.Commodity] = &CommodityState{
-					inventory: inventory{
-						capacity:      capacity,
-						idealQuantity: idealQuantity,
-						quantity:      quantity,
-					},
-				}
-			} else {
-				state := agent.commodityState[commodityUsed.Commodity]
-				state.capacity = max(state.capacity, capacity)
-				state.idealQuantity = max(state.idealQuantity, idealQuantity)
-				state.quantity = max(state.quantity, quantity)
-			}
-		}
-	}
-
-	return agent
 }
 
 // TODO: agents might need a start inventory, depending on how fast they need to come online
-func (r *Registry) AddAgent(currency float64, role production.Role) *Agent {
-	agent := NewAgent(r.nextID, r.rng, currency, role)
+func (r *Registry) NewAgent(currency float64, role production.Role) *Agent {
+	agent := newAgent(r.nextID, r.rng, currency, role)
 
 	r.Agents[r.nextID] = agent
 	r.nextID += 1
@@ -287,6 +236,46 @@ func (a *Agent) hasSpace(recipe production.Recipe) bool {
 	return true
 }
 
+func (a *Agent) initializeInventory() {
+	for _, recipe := range a.role.Recipes {
+		for _, commodityUsed := range recipe.CommoditiesUsed {
+			var capacity int
+			var idealQuantity int
+			var quantity int
+
+			// TODO: arbitrary for now, might need tweaking
+			// also initialize priceBelief and historicalMean to some value
+			capacity = 20
+			switch {
+			case commodityUsed.IsInput && commodityUsed.IsOutput:
+				idealQuantity = recipe.Input[commodityUsed.Commodity] * 2
+				quantity = idealQuantity
+			case commodityUsed.IsInput:
+				idealQuantity = recipe.Input[commodityUsed.Commodity] * 3
+				quantity = idealQuantity
+			case commodityUsed.IsOutput:
+				idealQuantity = 0
+				quantity = idealQuantity
+			}
+
+			if _, exists := a.commodityState[commodityUsed.Commodity]; !exists {
+				a.commodityState[commodityUsed.Commodity] = &CommodityState{
+					inventory: inventory{
+						capacity:      capacity,
+						idealQuantity: idealQuantity,
+						quantity:      quantity,
+					},
+				}
+			} else {
+				state := a.commodityState[commodityUsed.Commodity]
+				state.capacity = max(state.capacity, capacity)
+				state.idealQuantity = max(state.idealQuantity, idealQuantity)
+				state.quantity = max(state.quantity, quantity)
+			}
+		}
+	}
+}
+
 func (a *Agent) selectRecipe() production.Recipe {
 	for _, recipe := range a.role.Recipes {
 		if a.canProduce(recipe) {
@@ -322,6 +311,21 @@ func (a *Agent) favorability(priceBelief rpgMath.PriceRange, historicalMean floa
 		favorability = 0.5
 	}
 	return favorability
+}
+
+func newAgent(id int, rng *rpgMath.RNG, currency float64, role production.Role) *Agent {
+	agent := &Agent{
+		id:             id,
+		rng:            rng,
+		commodityState: make(map[commodity]*CommodityState),
+
+		currency: currency,
+		role:     role,
+	}
+
+	agent.initializeInventory()
+
+	return agent
 }
 
 func priceOf(priceBelief rpgMath.PriceRange, rng *rpgMath.RNG) float64 {
