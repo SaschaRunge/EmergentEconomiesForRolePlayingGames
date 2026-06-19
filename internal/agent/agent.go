@@ -21,6 +21,17 @@ type Registry struct {
 	rng *rpgMath.RNG
 }
 
+func NewRegistry(targetAmount int, rng *rpgMath.RNG) Registry {
+	return Registry{
+		Agents: map[int]*Agent{},
+		nextID: 0,
+
+		targetAmount: targetAmount,
+
+		rng: rng,
+	}
+}
+
 type Agent struct {
 	id  int
 	rng *rpgMath.RNG
@@ -34,17 +45,6 @@ type Agent struct {
 	role     production.Role
 }
 
-func NewRegistry(targetAmount int, rng *rpgMath.RNG) Registry {
-	return Registry{
-		Agents: map[int]*Agent{},
-		nextID: 0,
-
-		targetAmount: targetAmount,
-
-		rng: rng,
-	}
-}
-
 // TODO: agents might need a start inventory, depending on how fast they need to come online
 func (r *Registry) NewAgent(currency float64, role production.Role) *Agent {
 	agent := newAgent(r.nextID, r.rng, currency, role)
@@ -54,12 +54,59 @@ func (r *Registry) NewAgent(currency float64, role production.Role) *Agent {
 	return agent
 }
 
-func (a *Agent) CurrentAsk() ask {
-	return a.ask
+func newAgent(id int, rng *rpgMath.RNG, currency float64, role production.Role) *Agent {
+	agent := &Agent{
+		id:             id,
+		rng:            rng,
+		commodityState: make(map[commodity]*CommodityState),
+
+		currency: currency,
+		role:     role,
+	}
+
+	agent.initializeInventory()
+
+	return agent
 }
 
-func (a *Agent) CurrentBid() bid {
-	return a.bid
+func (a *Agent) initializeInventory() {
+	for _, recipe := range a.role.Recipes {
+		for _, commodityUsed := range recipe.CommoditiesUsed {
+			var capacity int
+			var idealQuantity int
+			var quantity int
+
+			// TODO: arbitrary for now, might need tweaking
+			// also initialize priceBelief and historicalMean to some value
+			capacity = 20
+			switch {
+			case commodityUsed.IsInput && commodityUsed.IsOutput:
+				idealQuantity = recipe.Input[commodityUsed.Commodity] * 2
+				quantity = idealQuantity
+			case commodityUsed.IsInput:
+				idealQuantity = recipe.Input[commodityUsed.Commodity] * 3
+				quantity = idealQuantity
+			case commodityUsed.IsOutput:
+				idealQuantity = 0
+				quantity = idealQuantity
+			}
+
+			if _, exists := a.commodityState[commodityUsed.Commodity]; !exists {
+				a.commodityState[commodityUsed.Commodity] = &CommodityState{
+					inventory: inventory{
+						capacity:      capacity,
+						idealQuantity: idealQuantity,
+						quantity:      quantity,
+					},
+				}
+			} else {
+				state := a.commodityState[commodityUsed.Commodity]
+				state.capacity = max(state.capacity, capacity)
+				state.idealQuantity = max(state.idealQuantity, idealQuantity)
+				state.quantity = max(state.quantity, quantity)
+			}
+		}
+	}
 }
 
 func (a *Agent) CreateAsk(c commodity, limit int) ask {
@@ -90,8 +137,65 @@ func (a *Agent) CreateBid(c commodity, limit int) bid {
 	return a.bid
 }
 
-func (a *Agent) GetID() int {
-	return a.id
+func (a *Agent) PerformProduction() {
+	recipe := a.selectRecipe()
+	if recipe.Name == "" || !a.canProduce(recipe) {
+		return
+	}
+
+	//TODO: maybe evaluate quantity in place and then assign to inventory
+	for c, quantity := range recipe.Input {
+		a.commodityState[c].quantity -= quantity
+	}
+
+	for c, quantity := range recipe.Output {
+		randomFactor := 1
+		if _, exists := recipe.OutputChance[c]; exists {
+			if recipe.OutputChance[c] <= a.rng.NumberBetween(0, 1) {
+				randomFactor = 0
+			}
+		}
+
+		a.commodityState[c].quantity += quantity * randomFactor
+	}
+}
+
+func (a *Agent) canProduce(recipe production.Recipe) bool {
+	return a.hasIngredients(recipe) && a.hasSpace(recipe)
+}
+
+func (a *Agent) hasIngredients(recipe production.Recipe) bool {
+	for c, quantity := range recipe.Input {
+		state, exists := a.commodityState[c]
+		if !exists || state.quantity < quantity {
+			return false
+		}
+	}
+	return true
+}
+
+func (a *Agent) hasSpace(recipe production.Recipe) bool {
+	for c, quantity := range recipe.Output {
+		state, exists := a.commodityState[c]
+		input, _ := recipe.Input[c]
+
+		totalQuantityProduced := quantity - input
+
+		if !exists || state.AvailableSpace() < totalQuantityProduced {
+			return false
+		}
+	}
+
+	return true
+}
+
+func (a *Agent) selectRecipe() production.Recipe {
+	for _, recipe := range a.role.Recipes {
+		if a.canProduce(recipe) {
+			return recipe
+		}
+	}
+	return production.Recipe{}
 }
 
 // TODO: these need massive rework, the pseudocode is pretty flawed unfortunately
@@ -184,107 +288,6 @@ func (a *Agent) PriceUpdateFromBid(receipt trade.Receipt) {
 	a.commodityState[a.CurrentBid().Commodity] = state
 }
 
-func (a *Agent) PerformProduction() {
-	recipe := a.selectRecipe()
-	if recipe.Name == "" || !a.canProduce(recipe) {
-		return
-	}
-
-	//TODO: maybe evaluate quantity in place and then assign to inventory
-	for c, quantity := range recipe.Input {
-		a.commodityState[c].quantity -= quantity
-	}
-
-	for c, quantity := range recipe.Output {
-		randomFactor := 1
-		if _, exists := recipe.OutputChance[c]; exists {
-			if recipe.OutputChance[c] <= a.rng.NumberBetween(0, 1) {
-				randomFactor = 0
-			}
-		}
-
-		a.commodityState[c].quantity += quantity * randomFactor
-	}
-}
-
-func (a *Agent) canProduce(recipe production.Recipe) bool {
-	return a.hasIngredients(recipe) && a.hasSpace(recipe)
-}
-
-func (a *Agent) hasIngredients(recipe production.Recipe) bool {
-	for c, quantity := range recipe.Input {
-		state, exists := a.commodityState[c]
-		if !exists || state.quantity < quantity {
-			return false
-		}
-	}
-	return true
-}
-
-func (a *Agent) hasSpace(recipe production.Recipe) bool {
-	for c, quantity := range recipe.Output {
-		state, exists := a.commodityState[c]
-		input, _ := recipe.Input[c]
-
-		totalQuantityProduced := quantity - input
-
-		if !exists || state.AvailableSpace() < totalQuantityProduced {
-			return false
-		}
-	}
-
-	return true
-}
-
-func (a *Agent) initializeInventory() {
-	for _, recipe := range a.role.Recipes {
-		for _, commodityUsed := range recipe.CommoditiesUsed {
-			var capacity int
-			var idealQuantity int
-			var quantity int
-
-			// TODO: arbitrary for now, might need tweaking
-			// also initialize priceBelief and historicalMean to some value
-			capacity = 20
-			switch {
-			case commodityUsed.IsInput && commodityUsed.IsOutput:
-				idealQuantity = recipe.Input[commodityUsed.Commodity] * 2
-				quantity = idealQuantity
-			case commodityUsed.IsInput:
-				idealQuantity = recipe.Input[commodityUsed.Commodity] * 3
-				quantity = idealQuantity
-			case commodityUsed.IsOutput:
-				idealQuantity = 0
-				quantity = idealQuantity
-			}
-
-			if _, exists := a.commodityState[commodityUsed.Commodity]; !exists {
-				a.commodityState[commodityUsed.Commodity] = &CommodityState{
-					inventory: inventory{
-						capacity:      capacity,
-						idealQuantity: idealQuantity,
-						quantity:      quantity,
-					},
-				}
-			} else {
-				state := a.commodityState[commodityUsed.Commodity]
-				state.capacity = max(state.capacity, capacity)
-				state.idealQuantity = max(state.idealQuantity, idealQuantity)
-				state.quantity = max(state.quantity, quantity)
-			}
-		}
-	}
-}
-
-func (a *Agent) selectRecipe() production.Recipe {
-	for _, recipe := range a.role.Recipes {
-		if a.canProduce(recipe) {
-			return recipe
-		}
-	}
-	return production.Recipe{}
-}
-
 func (a *Agent) determineSaleQuantity(c commodity) int {
 	state := a.commodityState[c]
 
@@ -313,21 +316,18 @@ func (a *Agent) favorability(priceBelief rpgMath.PriceRange, historicalMean floa
 	return favorability
 }
 
-func newAgent(id int, rng *rpgMath.RNG, currency float64, role production.Role) *Agent {
-	agent := &Agent{
-		id:             id,
-		rng:            rng,
-		commodityState: make(map[commodity]*CommodityState),
-
-		currency: currency,
-		role:     role,
-	}
-
-	agent.initializeInventory()
-
-	return agent
-}
-
 func priceOf(priceBelief rpgMath.PriceRange, rng *rpgMath.RNG) float64 {
 	return rng.NumberBetween(priceBelief.Min, priceBelief.Max)
+}
+
+func (a *Agent) CurrentAsk() ask {
+	return a.ask
+}
+
+func (a *Agent) CurrentBid() bid {
+	return a.bid
+}
+
+func (a *Agent) GetID() int {
+	return a.id
 }
