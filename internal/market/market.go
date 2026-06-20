@@ -28,6 +28,7 @@ type Simulator struct {
 }
 
 func (s *Simulator) chooseAgentRole() production.Role {
+
 	return production.Role{}
 }
 
