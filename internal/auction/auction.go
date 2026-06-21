@@ -4,8 +4,8 @@ import (
 	"cmp"
 	"slices"
 
-	_ "github.com/SaschaRunge/Go/EmergentEconomiesForRolePlayingGames/internal/agent"
 	rpgMath "github.com/SaschaRunge/Go/EmergentEconomiesForRolePlayingGames/internal/math"
+	//"github.com/SaschaRunge/Go/EmergentEconomiesForRolePlayingGames/internal/production"
 	"github.com/SaschaRunge/Go/EmergentEconomiesForRolePlayingGames/internal/trade"
 )
 
@@ -18,11 +18,10 @@ type House struct {
 	rng *rpgMath.RNG
 
 	daysToArchive int
-	statistics    []Statistics
+	report        map[commodity]Report
 }
 
-type Statistics struct {
-	Commodity            commodity
+type Report struct {
 	Supply               int
 	Demand               int
 	UnitsSold            int
@@ -34,7 +33,7 @@ func New(daysToArchive int, rng *rpgMath.RNG) *House {
 		rng: rng,
 
 		daysToArchive: daysToArchive,
-		statistics:    []Statistics{},
+		report:        make(map[commodity]Report),
 	}
 }
 
@@ -79,8 +78,9 @@ func (h *House) ResolveOffers(c commodity, asks []ask, bids []bid) map[int][]rec
 			buyer.Quantity -= quantityTraded
 			seller.Quantity -= quantityTraded
 
+			// TODO: test invariant all receipts need to have correct agent id
 			receiptsByAgentID[buyer.AgentID] = append(receiptsByAgentID[buyer.AgentID], trade.NewReceipt(buyer.AgentID, c, clearingPrice, quantityTraded))
-			receiptsByAgentID[seller.AgentID] = append(receiptsByAgentID[seller.AgentID], trade.NewReceipt(seller.AgentID, c, clearingPrice, quantityTraded))
+			receiptsByAgentID[seller.AgentID] = append(receiptsByAgentID[seller.AgentID], trade.NewReceipt(seller.AgentID, c, clearingPrice, -quantityTraded))
 		}
 
 		if buyer.Quantity == 0 {

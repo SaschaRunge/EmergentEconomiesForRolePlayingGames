@@ -36,7 +36,7 @@ func TestResolveOffers(t *testing.T) {
 			bids: []bid{trade.NewBid(2, trade.CommodityWood, 100, 10)},
 			expected: ReceiptsByAgentID{
 				1: []receipt{
-					trade.NewReceipt(1, trade.CommodityWood, 75, 10),
+					trade.NewReceipt(1, trade.CommodityWood, 75, -10),
 				},
 				2: []receipt{
 					trade.NewReceipt(2, trade.CommodityWood, 75, 10),
@@ -49,7 +49,7 @@ func TestResolveOffers(t *testing.T) {
 			bids: []bid{trade.NewBid(2, trade.CommodityWood, 100, 20)},
 			expected: ReceiptsByAgentID{
 				1: []receipt{
-					trade.NewReceipt(1, trade.CommodityWood, 75, 10),
+					trade.NewReceipt(1, trade.CommodityWood, 75, -10),
 				},
 				2: []receipt{
 					trade.NewReceipt(2, trade.CommodityWood, 75, 10),
@@ -62,7 +62,7 @@ func TestResolveOffers(t *testing.T) {
 			bids: []bid{trade.NewBid(2, trade.CommodityWood, 100, 10)},
 			expected: ReceiptsByAgentID{
 				1: []receipt{
-					trade.NewReceipt(1, trade.CommodityWood, 75, 10),
+					trade.NewReceipt(1, trade.CommodityWood, 75, -10),
 				},
 				2: []receipt{
 					trade.NewReceipt(2, trade.CommodityWood, 75, 10),
@@ -83,13 +83,13 @@ func TestResolveOffers(t *testing.T) {
 			},
 			expected: ReceiptsByAgentID{
 				1: []receipt{
-					trade.NewReceipt(1, trade.CommodityWood, 100, 10),
+					trade.NewReceipt(1, trade.CommodityWood, 100, -10),
 				},
 				2: []receipt{
-					trade.NewReceipt(2, trade.CommodityWood, 110, 20),
+					trade.NewReceipt(2, trade.CommodityWood, 110, -20),
 				},
 				3: []receipt{
-					trade.NewReceipt(3, trade.CommodityWood, 125, 30),
+					trade.NewReceipt(3, trade.CommodityWood, 125, -30),
 				},
 				4: []receipt{
 					trade.NewReceipt(4, trade.CommodityWood, 100, 10),
@@ -113,9 +113,9 @@ func TestResolveOffers(t *testing.T) {
 			},
 			expected: ReceiptsByAgentID{
 				1: []receipt{
-					trade.NewReceipt(1, trade.CommodityWood, 100, 10),
+					trade.NewReceipt(1, trade.CommodityWood, 100, -10),
 
-					trade.NewReceipt(1, trade.CommodityWood, 90, 20),
+					trade.NewReceipt(1, trade.CommodityWood, 90, -20),
 				},
 				2: []receipt{
 					trade.NewReceipt(2, trade.CommodityWood, 100, 10),
@@ -141,15 +141,15 @@ func TestResolveOffers(t *testing.T) {
 			},
 			expected: ReceiptsByAgentID{
 				1: []receipt{
-					trade.NewReceipt(1, trade.CommodityWood, 100, 10),
+					trade.NewReceipt(1, trade.CommodityWood, 100, -10),
 				},
 				2: []receipt{
-					trade.NewReceipt(2, trade.CommodityWood, 105, 5),
-					trade.NewReceipt(2, trade.CommodityWood, 85, 10),
+					trade.NewReceipt(2, trade.CommodityWood, 105, -5),
+					trade.NewReceipt(2, trade.CommodityWood, 85, -10),
 				},
 				3: []receipt{
-					trade.NewReceipt(3, trade.CommodityWood, 95, 5),
-					trade.NewReceipt(3, trade.CommodityWood, 85, 10),
+					trade.NewReceipt(3, trade.CommodityWood, 95, -5),
+					trade.NewReceipt(3, trade.CommodityWood, 85, -10),
 				},
 				5: []receipt{
 					trade.NewReceipt(5, trade.CommodityWood, 100, 10),
