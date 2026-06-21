@@ -1,6 +1,7 @@
 package agent
 
 import (
+	"fmt"
 	"math"
 
 	rpgMath "github.com/SaschaRunge/Go/EmergentEconomiesForRolePlayingGames/internal/math"
@@ -288,6 +289,26 @@ func (a *Agent) PriceUpdateFromBid(receipt trade.Receipt) {
 	a.commodityState[a.CurrentBid().Commodity] = state
 }
 
+// TODO: need tests
+func (a *Agent) TradeCommodity(c commodity, amount int) bool {
+	state := a.mustGetCommodityState(c)
+	if state.AvailableSpace() < amount ||
+		state.quantity+amount < 0 {
+		return false
+	}
+
+	a.commodityState[c].quantity += amount
+	return true
+}
+
+func (a *Agent) TradeCurrency(amount float64) bool {
+	if amount+a.currency < 0 {
+		return false
+	}
+	a.currency += amount
+	return true
+}
+
 func (a *Agent) determineSaleQuantity(c commodity) int {
 	state := a.commodityState[c]
 
@@ -330,4 +351,13 @@ func (a *Agent) CurrentBid() bid {
 
 func (a *Agent) GetID() int {
 	return a.id
+}
+
+func (a *Agent) mustGetCommodityState(c commodity) *CommodityState {
+	state, exists := a.commodityState[c]
+	if !exists {
+		panic(fmt.Sprintf("agent does not know commodity %q", c.String()))
+	}
+
+	return state
 }
