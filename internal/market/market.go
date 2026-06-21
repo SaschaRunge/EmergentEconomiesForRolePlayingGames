@@ -1,6 +1,9 @@
 package market
 
 import (
+	"math"
+	"slices"
+
 	"github.com/SaschaRunge/Go/EmergentEconomiesForRolePlayingGames/internal/agent"
 	"github.com/SaschaRunge/Go/EmergentEconomiesForRolePlayingGames/internal/auction"
 	rpgMath "github.com/SaschaRunge/Go/EmergentEconomiesForRolePlayingGames/internal/math"
@@ -12,6 +15,8 @@ import (
 const (
 	daysToArchive        = 14
 	targetNumberOfAgents = 1000
+
+	dailyTax = 50
 )
 
 type ask = trade.Ask
@@ -24,12 +29,8 @@ type Simulator struct {
 	commodities  []commodity
 	registry     agent.Registry
 
-	rng *rpgMath.RNG
-}
-
-func (s *Simulator) chooseAgentRole() production.Role {
-
-	return production.Role{}
+	rng                 *rpgMath.RNG
+	profitabilityByRole map[string]float64
 }
 
 func (s *Simulator) New() {
@@ -40,11 +41,40 @@ func (s *Simulator) New() {
 
 func (s *Simulator) Run(rounds int) {
 	for range rounds {
+		s.profitabilityByRole = make(map[string]float64)
+
 		for _, c := range s.commodities {
 			asks, bids := s.gatherOrders(c)
-			receipts := s.auctionHouse.ResolveOffers(c, asks, bids)
-			s.updateAgents(c, receipts)
+			receiptsByAgentID := s.auctionHouse.ResolveOffers(c, asks, bids)
+
+			for agentID, receipts := range receiptsByAgentID {
+				for _, receipt := range receipts {
+					agent := s.registry.Agents[agentID]
+					currencyDelta := -receipt.Price * float64(receipt.Quantity)
+
+					if !agent.TradeCurrency(currencyDelta) || !agent.TradeCommodity(receipt.Commodity, receipt.Quantity) {
+						panic("agent was not able to fullfill trade")
+					}
+
+					s.profitabilityByRole[agent.GetRole()] += currencyDelta
+				}
+			}
+			s.updateAgents(c, receiptsByAgentID)
 		}
+
+		killCount := 0
+		for _, agent := range s.registry.Agents {
+			if !agent.TradeCurrency(-dailyTax) {
+				s.registry.RemoveAgent(agent.GetID())
+				killCount++
+			}
+		}
+
+		/*
+			for range killcount {
+				s.registry.NewAgent()
+			}
+		*/
 	}
 }
 
@@ -78,4 +108,59 @@ func (s *Simulator) updateAgents(c commodity, receiptsByAgentID map[int][]receip
 		agent.PriceUpdateFromAsk(aggregateReceipt)
 		agent.PriceUpdateFromBid(aggregateReceipt)
 	}
+}
+
+// TODO: test
+func (s *Simulator) chooseAgentRole() production.Role {
+	minProfitablity := math.MaxFloat64
+	maxProfitablity := -math.MaxFloat64
+
+	normalizedProfitabilityByRole := make(map[string]float64, len(s.profitabilityByRole))
+	rolesWithoutAgent := []string{}
+
+	for role := range production.RoleRegistry {
+		profitablity, exists := s.profitabilityByRole[role]
+		if !exists {
+			rolesWithoutAgent = append(rolesWithoutAgent, role)
+			continue
+		}
+
+		if profitablity < minProfitablity {
+			minProfitablity = profitablity
+		}
+		if profitablity > maxProfitablity {
+			maxProfitablity = profitablity
+		}
+	}
+
+	if len(rolesWithoutAgent) > 0 {
+		roleAsString := rpgMath.RandomElement(s.rng, rolesWithoutAgent)
+		return production.RoleRegistry[roleAsString]
+	}
+
+	rolesSorted := []string{}
+	spread := maxProfitablity - minProfitablity
+	for role, profitablity := range s.profitabilityByRole {
+		normalizedProfitabilityByRole[role] = (profitablity - minProfitablity) / spread
+		rolesSorted = append(rolesSorted, role)
+	}
+
+	slices.SortFunc(rolesSorted, func(a, b string) int {
+		switch {
+		case rpgMath.AlmostEquals(s.profitabilityByRole[a], s.profitabilityByRole[b], rpgMath.Epsilon):
+			return 0
+		case s.profitabilityByRole[a] > s.profitabilityByRole[b]:
+			return 1
+		default:
+			return -1
+		}
+	})
+
+	pick := s.rng.NumberBetween(0, 1)
+	for i := 1; i < len(rolesSorted); i++ {
+		if pick < normalizedProfitabilityByRole[rolesSorted[i]] {
+			return production.RoleRegistry[rolesSorted[i-1]]
+		}
+	}
+	return production.RoleRegistry[rolesSorted[len(rolesSorted)-1]]
 }

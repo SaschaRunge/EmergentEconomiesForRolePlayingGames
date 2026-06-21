@@ -188,7 +188,6 @@ func TestDeterminePurchaseQuantity(t *testing.T) {
 }
 
 func TestPerformProduction(t *testing.T) {
-	epsilon := 0.0001
 	rng := rpgMath.NewRNG(42)
 
 	cases := []struct {
@@ -371,14 +370,13 @@ func TestPerformProduction(t *testing.T) {
 		c.agent.PerformProduction()
 
 		var state commodityStateByCommodity = c.agent.commodityState
-		if !commodityStateMapEqual(state, c.expected, epsilon) {
+		if !commodityStateMapEqual(state, c.expected, rpgMath.Epsilon) {
 			t.Errorf("case: %q:\nexpected: \n%v\nactual:\n%v", c.description, c.expected, state)
 		}
 	}
 }
 
 func TestPerformProductionOutputChance(t *testing.T) {
-	epsilon := 0.0001
 	rng := rpgMath.NewRNG(42)
 
 	test := struct {
@@ -416,7 +414,7 @@ func TestPerformProductionOutputChance(t *testing.T) {
 	test.agent.PerformProduction()
 
 	var state commodityStateByCommodity = test.agent.commodityState
-	if !commodityStateMapEqual(state, test.expected, epsilon) {
+	if !commodityStateMapEqual(state, test.expected, rpgMath.Epsilon) {
 		t.Errorf("case: %q:\nexpected: \n%v\nactual:\n%v", test.description, test.expected, state)
 	}
 

@@ -16,8 +16,6 @@ func (r ReceiptsByAgentID) String() string {
 }
 
 func TestResolveOffers(t *testing.T) {
-	epsilon := 0.0001
-
 	cases := []struct {
 		name     string
 		asks     []ask
@@ -171,7 +169,7 @@ func TestResolveOffers(t *testing.T) {
 
 		var actual ReceiptsByAgentID = auctionHouse.ResolveOffers(trade.CommodityWood, c.asks, c.bids)
 
-		if !equal(actual, c.expected, epsilon) {
+		if !equal(actual, c.expected, rpgMath.Epsilon) {
 			t.Errorf("test %q failed:\nexpected: \n%v \nactual: \n%v", c.name, c.expected, actual)
 		}
 	}

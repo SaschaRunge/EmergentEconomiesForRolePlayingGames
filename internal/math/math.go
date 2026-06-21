@@ -4,6 +4,8 @@ import (
 	"math"
 )
 
+const Epsilon = 0.0001
+
 type PriceRange struct {
 	Min float64
 	Max float64

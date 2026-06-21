@@ -17,7 +17,8 @@ type Registry struct {
 	Agents map[int]*Agent
 	nextID int
 
-	targetAmount int
+	targetAmountOfAgents int
+	roleDistribution     map[string]int
 
 	rng *rpgMath.RNG
 }
@@ -27,7 +28,8 @@ func NewRegistry(targetAmount int, rng *rpgMath.RNG) Registry {
 		Agents: map[int]*Agent{},
 		nextID: 0,
 
-		targetAmount: targetAmount,
+		targetAmountOfAgents: targetAmount,
+		roleDistribution:     make(map[string]int),
 
 		rng: rng,
 	}
@@ -52,6 +54,9 @@ func (r *Registry) NewAgent(currency float64, role production.Role) *Agent {
 
 	r.Agents[r.nextID] = agent
 	r.nextID += 1
+
+	r.roleDistribution[role.Name] += 1
+
 	return agent
 }
 
@@ -111,6 +116,12 @@ func (a *Agent) initializeInventory() {
 }
 
 func (r *Registry) RemoveAgent(id int) {
+	agent, exists := r.Agents[id]
+	if !exists {
+		panic("tried to delete non existant agent")
+	}
+
+	r.roleDistribution[agent.role.Name] -= 1
 	delete(r.Agents, id)
 }
 
@@ -355,6 +366,10 @@ func (a *Agent) CurrentBid() bid {
 
 func (a *Agent) GetID() int {
 	return a.id
+}
+
+func (a *Agent) GetRole() string {
+	return a.role.Name
 }
 
 func (a *Agent) mustGetCommodityState(c commodity) *CommodityState {
