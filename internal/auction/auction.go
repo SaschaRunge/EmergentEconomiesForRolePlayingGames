@@ -18,7 +18,7 @@ type House struct {
 	rng *rpgMath.RNG
 
 	daysToArchive int
-	report        map[commodity]Report
+	archive       map[commodity][]Report
 }
 
 type Report struct {
@@ -33,7 +33,7 @@ func New(daysToArchive int, rng *rpgMath.RNG) *House {
 		rng: rng,
 
 		daysToArchive: daysToArchive,
-		report:        make(map[commodity]Report),
+		archive:       make(map[commodity][]Report),
 	}
 }
 
@@ -92,4 +92,13 @@ func (h *House) ResolveOffers(c commodity, asks []ask, bids []bid) map[int][]rec
 	}
 
 	return receiptsByAgentID
+}
+
+func (h *House) archiveReport(c commodity, dailyReport Report) {
+	h.archive[c] = append(h.archive[c], dailyReport)
+
+	if len(h.archive[c]) > h.daysToArchive {
+		overflow := len(h.archive[c]) - h.daysToArchive
+		h.archive[c] = h.archive[c][overflow:]
+	}
 }
