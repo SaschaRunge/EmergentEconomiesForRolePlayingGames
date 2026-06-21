@@ -110,6 +110,10 @@ func (a *Agent) initializeInventory() {
 	}
 }
 
+func (r *Registry) RemoveAgent(id int) {
+	delete(r.Agents, id)
+}
+
 func (a *Agent) CreateAsk(c commodity, limit int) ask {
 	state, ok := a.commodityState[c]
 	if !ok {
