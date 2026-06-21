@@ -2,7 +2,6 @@ package market
 
 import (
 	"math"
-	"slices"
 
 	"github.com/SaschaRunge/Go/EmergentEconomiesForRolePlayingGames/internal/agent"
 	"github.com/SaschaRunge/Go/EmergentEconomiesForRolePlayingGames/internal/auction"
@@ -16,7 +15,8 @@ const (
 	daysToArchive        = 14
 	targetNumberOfAgents = 1000
 
-	dailyTax = 50
+	dailyTax      = 50
+	startCurrency = 1000
 )
 
 type ask = trade.Ask
@@ -70,11 +70,10 @@ func (s *Simulator) Run(rounds int) {
 			}
 		}
 
-		/*
-			for range killcount {
-				s.registry.NewAgent()
-			}
-		*/
+		for range killCount {
+			newRole := s.chooseAgentRole()
+			s.registry.NewAgent(startCurrency, newRole)
+		}
 	}
 }
 
@@ -112,24 +111,22 @@ func (s *Simulator) updateAgents(c commodity, receiptsByAgentID map[int][]receip
 
 // TODO: test
 func (s *Simulator) chooseAgentRole() production.Role {
-	minProfitablity := math.MaxFloat64
+	//minProfitablity := math.MaxFloat64
 	maxProfitablity := -math.MaxFloat64
 
-	normalizedProfitabilityByRole := make(map[string]float64, len(s.profitabilityByRole))
+	//normalizedProfitabilityByRole := make(map[string]float64, len(s.profitabilityByRole))
 	rolesWithoutAgent := []string{}
 
-	for role := range production.RoleRegistry {
-		profitablity, exists := s.profitabilityByRole[role]
-		if !exists {
-			rolesWithoutAgent = append(rolesWithoutAgent, role)
-			continue
+	var mostProfitableRole string
+	for roleName := range production.RoleRegistry {
+		if s.registry.GetAmountOf(roleName) == 0 {
+			rolesWithoutAgent = append(rolesWithoutAgent, roleName)
 		}
 
-		if profitablity < minProfitablity {
-			minProfitablity = profitablity
-		}
-		if profitablity > maxProfitablity {
-			maxProfitablity = profitablity
+		profitability, exists := s.profitabilityByRole[roleName]
+		if exists && profitability > maxProfitablity {
+			maxProfitablity = profitability
+			mostProfitableRole = roleName
 		}
 	}
 
@@ -138,29 +135,56 @@ func (s *Simulator) chooseAgentRole() production.Role {
 		return production.RoleRegistry[roleAsString]
 	}
 
-	rolesSorted := []string{}
-	spread := maxProfitablity - minProfitablity
-	for role, profitablity := range s.profitabilityByRole {
-		normalizedProfitabilityByRole[role] = (profitablity - minProfitablity) / spread
-		rolesSorted = append(rolesSorted, role)
+	// TODO: placeholder, need to think about what to do if this occurs
+	if mostProfitableRole == "" {
+		panic("no trades occured last round")
 	}
 
-	slices.SortFunc(rolesSorted, func(a, b string) int {
-		switch {
-		case rpgMath.AlmostEquals(s.profitabilityByRole[a], s.profitabilityByRole[b], rpgMath.Epsilon):
-			return 0
-		case s.profitabilityByRole[a] > s.profitabilityByRole[b]:
-			return 1
-		default:
-			return -1
-		}
-	})
+	return production.RoleRegistry[mostProfitableRole]
+	/*
+		for role := range production.RoleRegistry {
+			profitablity, exists := s.profitabilityByRole[role]
+			if !exists {
+				rolesWithoutAgent = append(rolesWithoutAgent, role)
+				continue
+			}
 
-	pick := s.rng.NumberBetween(0, 1)
-	for i := 1; i < len(rolesSorted); i++ {
-		if pick < normalizedProfitabilityByRole[rolesSorted[i]] {
-			return production.RoleRegistry[rolesSorted[i-1]]
+			if profitablity < minProfitablity {
+				minProfitablity = profitablity
+			}
+			if profitablity > maxProfitablity {
+				maxProfitablity = profitablity
+			}
 		}
-	}
-	return production.RoleRegistry[rolesSorted[len(rolesSorted)-1]]
+
+		if len(rolesWithoutAgent) > 0 {
+			roleAsString := rpgMath.RandomElement(s.rng, rolesWithoutAgent)
+			return production.RoleRegistry[roleAsString]
+		}
+
+		rolesSorted := []string{}
+		spread := maxProfitablity - minProfitablity
+		for role, profitablity := range s.profitabilityByRole {
+			normalizedProfitabilityByRole[role] = (profitablity - minProfitablity) / spread
+			rolesSorted = append(rolesSorted, role)
+		}
+
+		slices.SortFunc(rolesSorted, func(a, b string) int {
+			switch {
+			case rpgMath.AlmostEquals(s.profitabilityByRole[a], s.profitabilityByRole[b], rpgMath.Epsilon):
+				return 0
+			case s.profitabilityByRole[a] > s.profitabilityByRole[b]:
+				return 1
+			default:
+				return -1
+			}
+		})
+
+		pick := s.rng.NumberBetween(0, 1)
+		for i := 1; i < len(rolesSorted); i++ {
+			if pick < normalizedProfitabilityByRole[rolesSorted[i]] {
+				return production.RoleRegistry[rolesSorted[i-1]]
+			}
+		}
+		return production.RoleRegistry[rolesSorted[len(rolesSorted)-1]]*/
 }

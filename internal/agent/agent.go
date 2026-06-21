@@ -115,6 +115,10 @@ func (a *Agent) initializeInventory() {
 	}
 }
 
+func (r *Registry) GetAmountOf(role string) int {
+	return r.roleDistribution[role]
+}
+
 func (r *Registry) RemoveAgent(id int) {
 	agent, exists := r.Agents[id]
 	if !exists {
