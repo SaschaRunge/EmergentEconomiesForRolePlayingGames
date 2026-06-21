@@ -38,7 +38,7 @@ func NewRegistry(targetAmount int, rng *rpgMath.RNG) Registry {
 type Agent struct {
 	id  int
 	rng *rpgMath.RNG
-	// TODO: have to initialize and decide how to make sure what types of commodity an agent trades in
+
 	commodityState map[commodity]*CommodityState
 
 	ask ask
@@ -48,7 +48,6 @@ type Agent struct {
 	role     production.Role
 }
 
-// TODO: agents might need a start inventory, depending on how fast they need to come online
 func (r *Registry) NewAgent(currency float64, role production.Role) *Agent {
 	agent := newAgent(r.nextID, r.rng, currency, role)
 
