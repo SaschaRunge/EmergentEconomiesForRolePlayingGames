@@ -33,6 +33,14 @@ func Clamp(value, min, max float64) float64 {
 	return value
 }
 
+func SlidingWindowAverage(oldValue, newValue, currentAvg float64, n int) float64 {
+	if n < 1 {
+		panic("sliding average not defined for n < 1")
+	}
+
+	return currentAvg + (newValue-oldValue)/float64(n)
+}
+
 func WeightedMean(v1, v2, q1, q2 float64) float64 {
 	return (v1*q1 + v2*q2) / (q1 + q2)
 }

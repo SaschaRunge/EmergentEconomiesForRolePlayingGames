@@ -5,7 +5,6 @@ import (
 	"slices"
 
 	rpgMath "github.com/SaschaRunge/Go/EmergentEconomiesForRolePlayingGames/internal/math"
-	//"github.com/SaschaRunge/Go/EmergentEconomiesForRolePlayingGames/internal/production"
 	"github.com/SaschaRunge/Go/EmergentEconomiesForRolePlayingGames/internal/trade"
 )
 
