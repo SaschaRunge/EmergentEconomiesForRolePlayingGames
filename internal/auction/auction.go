@@ -64,7 +64,7 @@ func (h *House) ResolveOffers(c commodity, asks []ask, bids []bid) map[int][]rec
 		buyer := &bids[0]
 		seller := &asks[0]
 
-		//might need revision, contrary to the paper this will cause cancelation of trades if there's no buyer willing to match a sellers price
+		// might need revision, contrary to the paper this will cause cancelation of trades if there's no buyer willing to match a sellers price
 		if buyer.Price < seller.Price {
 			break
 		}
