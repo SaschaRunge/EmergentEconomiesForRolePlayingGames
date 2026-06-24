@@ -48,6 +48,14 @@ func (h *House) ResolveOffers(c commodity, asks []ask, bids []bid) map[int][]rec
 		}
 	}
 
+	report := Report{}
+	for _, ask := range asks {
+		report.Supply += ask.Quantity
+	}
+	for _, bid := range bids {
+		report.Demand += bid.Quantity
+	}
+
 	receiptsByAgentID := make(map[int][]receipt)
 
 	rpgMath.Shuffle(h.rng, asks)
@@ -80,6 +88,9 @@ func (h *House) ResolveOffers(c commodity, asks []ask, bids []bid) map[int][]rec
 			// TODO: test invariant all receipts need to have correct agent id
 			receiptsByAgentID[buyer.AgentID] = append(receiptsByAgentID[buyer.AgentID], trade.NewReceipt(buyer.AgentID, c, clearingPrice, quantityTraded))
 			receiptsByAgentID[seller.AgentID] = append(receiptsByAgentID[seller.AgentID], trade.NewReceipt(seller.AgentID, c, clearingPrice, -quantityTraded))
+
+			report.UnitsSold += quantityTraded
+			//TODO: report.averageClearingPrice = movingMean()
 		}
 
 		if buyer.Quantity == 0 {
@@ -90,7 +101,7 @@ func (h *House) ResolveOffers(c commodity, asks []ask, bids []bid) map[int][]rec
 		}
 	}
 
-	// TODO: archiveReport
+	h.archiveReport(c, report)
 	return receiptsByAgentID
 }
 
