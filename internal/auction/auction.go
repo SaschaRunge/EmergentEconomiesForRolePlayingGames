@@ -90,6 +90,7 @@ func (h *House) ResolveOffers(c commodity, asks []ask, bids []bid) map[int][]rec
 		}
 	}
 
+	// TODO: archiveReport
 	return receiptsByAgentID
 }
 
