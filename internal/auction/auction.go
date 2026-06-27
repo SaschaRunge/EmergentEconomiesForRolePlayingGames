@@ -49,12 +49,12 @@ func (h *House) ResolveOffers(c commodity, asks []ask, bids []bid) map[int][]rec
 	}
 
 	report := Report{}
-	for _, ask := range asks {
+	/*for _, ask := range asks {
 		report.Supply += ask.Quantity
 	}
 	for _, bid := range bids {
 		report.Demand += bid.Quantity
-	}
+	}*/
 
 	receiptsByAgentID := make(map[int][]receipt)
 
@@ -85,12 +85,19 @@ func (h *House) ResolveOffers(c commodity, asks []ask, bids []bid) map[int][]rec
 			buyer.Quantity -= quantityTraded
 			seller.Quantity -= quantityTraded
 
+			report.Demand += quantityTraded
+			report.Supply += quantityTraded
+
 			// TODO: test invariant all receipts need to have correct agent id
 			receiptsByAgentID[buyer.AgentID] = append(receiptsByAgentID[buyer.AgentID], trade.NewReceipt(buyer.AgentID, c, clearingPrice, quantityTraded))
 			receiptsByAgentID[seller.AgentID] = append(receiptsByAgentID[seller.AgentID], trade.NewReceipt(seller.AgentID, c, clearingPrice, -quantityTraded))
 
+			if report.UnitsSold == 0 {
+				report.AverageClearingPrice = clearingPrice
+			} else {
+				report.AverageClearingPrice = rpgMath.WeightedMean(report.AverageClearingPrice, clearingPrice, float64(report.UnitsSold), float64(quantityTraded))
+			}
 			report.UnitsSold += quantityTraded
-			//TODO: report.averageClearingPrice = movingMean()
 		}
 
 		if buyer.Quantity == 0 {
@@ -99,6 +106,13 @@ func (h *House) ResolveOffers(c commodity, asks []ask, bids []bid) map[int][]rec
 		if seller.Quantity == 0 {
 			asks = asks[1:]
 		}
+	}
+
+	for _, ask := range asks {
+		report.Supply += ask.Quantity
+	}
+	for _, bid := range bids {
+		report.Demand += bid.Quantity
 	}
 
 	h.archiveReport(c, report)
