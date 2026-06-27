@@ -92,10 +92,10 @@ func (h *House) ResolveOffers(c commodity, asks []ask, bids []bid) map[int][]rec
 			receiptsByAgentID[buyer.AgentID] = append(receiptsByAgentID[buyer.AgentID], trade.NewReceipt(buyer.AgentID, c, clearingPrice, quantityTraded))
 			receiptsByAgentID[seller.AgentID] = append(receiptsByAgentID[seller.AgentID], trade.NewReceipt(seller.AgentID, c, clearingPrice, -quantityTraded))
 
-			if report.UnitsSold == 0 {
-				report.AverageClearingPrice = clearingPrice
-			} else {
+			if report.UnitsSold > 0 {
 				report.AverageClearingPrice = rpgMath.WeightedMean(report.AverageClearingPrice, clearingPrice, float64(report.UnitsSold), float64(quantityTraded))
+			} else {
+				report.AverageClearingPrice = clearingPrice
 			}
 			report.UnitsSold += quantityTraded
 		}
