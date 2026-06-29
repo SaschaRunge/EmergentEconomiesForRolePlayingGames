@@ -175,6 +175,10 @@ func TestResolveOffers(t *testing.T) {
 	}
 }
 
+func TestReport(t *testing.T) {
+
+}
+
 func equal(r1, r2 ReceiptsByAgentID, epsilon float64) bool {
 	if len(r1) != len(r2) {
 		return false
